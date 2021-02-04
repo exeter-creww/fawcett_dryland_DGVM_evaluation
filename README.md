@@ -7,6 +7,7 @@ R scripts used for final result generation:
 **LVODprocessingAnnualStackFin.R:** Filters out unreliable pixels based on observation count and ASC-DESC differences, creates filtered annual stack
 
 **createTRENDYGPPbricksv3.R:** Extracts GPP data for 2003-2018 from netCDF and writes raster bricks with converted GPP values (kg/m2/y) for further analysis.
+
 **createTRENDYcVegbricksv3.R:** Extracts vegetation carbon data for 2011-2018 from netCDF and writes raster bricks with veg. carbon values (kg/m2, above and below ground!) for further analysis.
 
 **LVODbiomAnnualTrendyMeanFigsDensPlotsWeights.R:** Generate scatterplot and linear model figures for TRENDY models and LVOD biomass carbon comparison
