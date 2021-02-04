@@ -3,7 +3,9 @@
 R scripts used for final result generation:
 
 **LVODprocessingASCv2.R:** Filter and aggregated daily netCDF datasets of LVOD, generating annual median and count rasters.
+
 **LVODprocessingDESCv2.R:** Same as above but for DESC datasets (used for masking ASC DESC differences)
+
 **LVODprocessingAnnualStackFin.R:** Filters out unreliable pixels based on observation count and ASC-DESC differences, creates filtered annual stack
 
 **createTRENDYGPPbricksv3.R:** Extracts GPP data for 2003-2018 from netCDF and writes raster bricks with converted GPP values (kg/m2/y) for further analysis.
