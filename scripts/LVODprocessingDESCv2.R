@@ -7,16 +7,18 @@ library(ncdf4)
 library(fields)
 library(viridis)
 
+setwd('D:/Driving_C')
+
 #read ncdf file
 
-yearfnames <- list.files("D:/Driving_C/LVOD_WGS84/DESC/")
+yearfnames <- list.files("./LVOD_WGS84/DESC/")
 
 
 yeardaystack <- stack()
 for(j in 1:11){
 
   
-ncfnamesDESC <- list.files(paste0("D:/Driving_C/LVOD_WGS84/DESC/",yearfnames[j],"/"))
+ncfnamesDESC <- list.files(paste0("./LVOD_WGS84/DESC/",yearfnames[j],"/"))
 
 
 vodstack1 <- stack() #first filtering for mean calculation
@@ -25,7 +27,7 @@ voddaystack <- stack()
 for(i in 1:length(ncfnamesDESC)){
 
   
-ncin <- nc_open(paste0("D:/Driving_C/LVOD_WGS84/DESC/",yearfnames[j],"/",ncfnamesDESC[i]))
+ncin <- nc_open(paste0("./LVOD_WGS84/DESC/",yearfnames[j],"/",ncfnamesDESC[i]))
 
 #get DOY
 #obsdate <- as.Date(substr(ncfnamesDESC[i],20,27),'%Y%m%d')
@@ -101,7 +103,7 @@ vodmedian <- t(flip(vodmedian,1))
 vodmedian[vodmedian<0] <- 0#NA
 extent(vodmedian) <- c(-180, 180, -90, 90)
 projection(vodmedian) <- CRS("+init=epsg:4326")
-writeRaster(vodmedian,paste0("D:/Driving_C/LVOD_WGS84/composites/vodmedian",yearfnames[j],"_DESCv2.tif"),overwrite=T)
+writeRaster(vodmedian,paste0("./LVOD_WGS84/composites/vodmedian",yearfnames[j],"_DESCv2.tif"),overwrite=T)
 
 # vodmean <- calc(vodstack2,mean,na.rm=T)
 # vodmean <- t(flip(vodmean,1))

@@ -1,10 +1,12 @@
+#derive LVOD to AGC calibration from Avitabile biomass map
+
 library(mblm)
 library(viridis)
 library(rgdal)
 library(Kendall)
 library(trend)
 library(scales)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(ncdf4)
 library(gridExtra)
 library(rasterVis)
 library(tls)
@@ -12,11 +14,12 @@ library(MASS)
 library(epiR)
 library(ggplot2)
 
-#derive LVOD to AGC calibration from Avitabile biomass map
+
+setwd('D:/Driving_C')
 
 #continent outlines for plotting and region subsetting
-continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
-NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
+continentshapes <- readOGR(dsn = getwd(), layer = "WorldContinents")
+NorthAmericaShape <- readOGR(dsn = getwd(), layer = "NorthAmericaNoGreenland")
 contsfordisp <- aggregate(continentshapes,dissolve=T)
 
 #extract four studied continents: North and South America, Africa and Australia
@@ -24,19 +27,19 @@ contnrlist <- c(1,6,3,4)#number in continent shapefiles
 studycontshapes <- aggregate(continentshapes[contnrlist,],dissolve=T)
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclass <- raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclass <- raster("./Plots/drylandclassclipfin.tif")
  
 
 #preprocessing of VOD data to median annual composites can be found in LVODprocessingAnnualStackFin.R
 
-VODannualstacktot <- stack("D:/Driving_C/LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
+VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
 
 #use 2011 as reliable calibration year (see Fan et al. 2019)
 VOD2011 <- VODannualstacktot[[2]]
 
 #Avitabile biomass dataset
 
-AvitabileBiom <- raster("D:/Driving_C/Avitabile_AGB_Map/Avitabile_AGB_Map.tif")
+AvitabileBiom <- raster("./Avitabile_AGB_Map/Avitabile_AGB_Map.tif")
 
 AvitabileBiomResamp <- resample(AvitabileBiom,VOD2011)
 AvitabileCResamp <- AvitabileBiomResamp*0.47

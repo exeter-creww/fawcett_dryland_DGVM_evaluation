@@ -1,17 +1,18 @@
+
+#read DGVM GPP data  for 2003 - 2018 and generate raster GPP files
+#calculate TRENDY means without SDGVM, LPJ-wsl, LPJ Bern and VISIT
+
 library(mblm)
 library(viridis)
 library(rgdal)
 library(Kendall) 
 library(trend)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(ncdf4)
 
-
-
-#read DGVM GPP data  for 2003 - 2018 and generate raster GPP files
-#calculate TRENDY means without SDGVM, LPJ-wsl, LPJ Bern and VISIT
+setwd('D:/Driving_C')
 
 #4 dimensional netcdf
-ncin <- nc_open(paste0("D:/Driving_C/DGVM/trendyv8_S3_gpp_1901-2018.nc"))
+ncin <- nc_open(paste0("./DGVM/trendyv8_S3_gpp_1901-2018.nc"))
 
 print(ncin)
 
@@ -51,4 +52,4 @@ TRENDYannualgpp <- stackApply(TRENDYbrick,monthyearindex,fun=mean)
 TRENDYannualgpp <- TRENDYannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
 
-writeRaster(TRENDYannualgpp,'D:/Driving_C/DGVM/TRENDYGPP_2003_2018v3.tif',overwrite=T)
+writeRaster(TRENDYannualgpp,'./DGVM/TRENDYGPP_2003_2018v3.tif',overwrite=T)

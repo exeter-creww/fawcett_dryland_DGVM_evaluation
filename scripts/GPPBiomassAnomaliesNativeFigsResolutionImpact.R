@@ -10,8 +10,9 @@ library(pals)
 library(scales)
 library(rgeos)
 library(reshape2)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(ncdf4)
 
+setwd('D:/Driving_C')
 
 #Compares the outputs from using different weighting for extracting cVeg and GPP from native model resolutions (done in scripts for individual models)
 
@@ -20,9 +21,9 @@ library("ncdf4", lib.loc="~/R/win-library/3.4")
 #extended: considers all pixels touched by mask
 
 #read GPP model native resolutions, different exctration methods
-modelGPPregular<- data.frame(GPPregular=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))[2:13])
-modelGPPcontained<- data.frame(GPPcontained=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_contained.csv"))[2:13])
-modelGPPextended<- data.frame(GPPextended=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_extended.csv"))[2:13])
+modelGPPregular<- data.frame(GPPregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))[2:13])
+modelGPPcontained<- data.frame(GPPcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_contained.csv"))[2:13])
+modelGPPextended<- data.frame(GPPextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_extended.csv"))[2:13])
 
 modelGPP <- data.frame(modelGPPregular,modelGPPcontained,modelGPPextended,modelnames=row.names(modelGPPregular))
 
@@ -42,9 +43,9 @@ plot(p)
 
 
 #read cVeg model native resolutions, different exctration methods
-modelcVegregular<- data.frame(cVegregular=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018.csv"))[2:13])
-modelcVegcontained<- data.frame(cVegcontained=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_contained.csv"))[2:13])
-modelcVegextended<- data.frame(cVegextended=colMeans(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_extended.csv"))[2:13])
+modelcVegregular<- data.frame(cVegregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018.csv"))[2:13])
+modelcVegcontained<- data.frame(cVegcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_contained.csv"))[2:13])
+modelcVegextended<- data.frame(cVegextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_extended.csv"))[2:13])
 
 modelcVeg <- data.frame(modelcVegregular,modelcVegcontained,modelcVegextended,modelnames=row.names(modelcVegregular))
 

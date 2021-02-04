@@ -1,3 +1,4 @@
+
 #convert daily vOD observations in nc to yearly mean, median and valid observation count rasters (uncomment below as needed)
 
 #library(chron)
@@ -7,16 +8,18 @@ library(ncdf4)
 library(fields)
 library(viridis) 
 
+setwd('D:/Driving_C')
+
 #read ncdf file
 
-yearfnames <- list.files("D:/Driving_C/LVOD_WGS84/ASC/")
+yearfnames <- list.files("./LVOD_WGS84/ASC/")
 
 
 yeardaystack <- stack()
 for(j in 1:11){#length(yearfnames)){
 
   
-ncfnamesASC <- list.files(paste0("D:/Driving_C/LVOD_WGS84/ASC/",yearfnames[j],"/"))
+ncfnamesASC <- list.files(paste0("./LVOD_WGS84/ASC/",yearfnames[j],"/"))
 
 vodstack1 <- stack() #first filtering for mean calculation
 vodstack2 <- stack() #SD filtering applied
@@ -24,7 +27,7 @@ voddaystack <- stack()
 for(i in 1:length(ncfnamesASC)){
 
   
-ncin <- nc_open(paste0("D:/Driving_C/LVOD_WGS84/ASC/",yearfnames[j],"/",ncfnamesASC[i]))
+ncin <- nc_open(paste0("./LVOD_WGS84/ASC/",yearfnames[j],"/",ncfnamesASC[i]))
 
 vod.array <- ncvar_get(ncin, "Optical_Thickness_Nad1")
 sf.array <- ncvar_get(ncin, "Scene_Flags3")
@@ -89,7 +92,7 @@ vodmedian <- t(flip(vodmedian,1))
 vodmedian[vodmedian<0] <- 0
 extent(vodmedian) <- c(-180, 180, -90, 90)
 projection(vodmedian) <- CRS("+init=epsg:4326")
-writeRaster(vodmedian,paste0("D:/Driving_C/LVOD_WGS84/composites/vodmedian",yearfnames[j],"_ASCv2.tif"),overwrite=T)
+writeRaster(vodmedian,paste0("./LVOD_WGS84/composites/vodmedian",yearfnames[j],"_ASCv2.tif"),overwrite=T)
 
 # vodmean <- calc(vodstack2,mean,na.rm=T)
 # vodmean <- t(flip(vodmean,1))

@@ -11,25 +11,26 @@ library(epiR)
 library(trend)
 library(ggplot2)
 library(gridExtra)
-library("ncdf4")
-#time series VOD trends suing Theil-Sen
+library(ncdf4)
+
+setwd('D:/Driving_C')
 
 #continent outlines for plotting
-continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
-NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
+continentshapes <- readOGR(dsn = getwd(), layer = "WorldContinents")
+NorthAmericaShape <- readOGR(dsn = getwd(), layer = "NorthAmericaNoGreenland")
 
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclass <- readOGR(dsn = 'D:/Driving_C', layer = "drylandsglobal")
+drylandclass <- readOGR(dsn = getwd(), layer = "drylandsglobal")
 drylandclasssfc <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactextractr
 #GPP stack PMLv2
 
-GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
 
 years <- seq(2003,2018,1)
 
 
-TRENDYannualgpp <- brick('D:/Driving_C/DGVM/TRENDYGPP_2003_2018v3.tif')*10 #from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #from kgC per m2 to MgC per ha
 
 GPPstackresamp <- raster::resample(GPPstack,TRENDYannualgpp[[1]])
 PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha
@@ -66,14 +67,14 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
   carbonyearmeansdf <- data.frame(PML=PMLGPPyearmeans$value,DGVM=TRENDYGPPyearmeans$value)
   
   #load regridded (1 deg) TRENDY models netcdf file and info
-  ncin <- nc_open(paste0("D:/Driving_C/DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
+  ncin <- nc_open(paste0("./DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
   
   modelnames <- ncatt_get(ncin,0,"models")
   modelnames <- unlist(strsplit(modelnames$value,' '))
   
   nc_close(ncin)
   
-  TRENDYmodelGPPnames <- list.files('D:/Driving_C/DGVM/TRENDYmodelsGPP')
+  TRENDYmodelGPPnames <- list.files('./DGVM/TRENDYmodelsGPP')
   
   #matrix of regression/correlation values (remove CCC)
   coeffmat <- matrix(NA,ncol=6,nrow=14)
@@ -89,7 +90,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
     
     modelindex <- modelvec[j]
     
-    TRENDYmodelGPPbrick <- brick(paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/',TRENDYmodelGPPnames[[ modelindex ]]))
+    TRENDYmodelGPPbrick <- brick(paste0('./DGVM/TRENDYmodelsGPP/',TRENDYmodelGPPnames[[ modelindex ]]))
     TRENDYGPPfinbrick <- TRENDYmodelGPPbrick*10 # kg per m2 to Mg C per ha
     
     DGVMGPPyearmeansperpoly <- exactextractr::exact_extract(calc(TRENDYGPPfinbrick,mean,na.rm=T),drylandclasssfc,force_df=T)
@@ -185,7 +186,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
 grid.arrange(grobs=meanscatterplotlist,nrow=3,ncol=5)
 
 #save stats table
-write.csv(coeffmat,'D:/Driving_C/stats/DGVMvsMODIS_GPPTrendStatsWeightedV1.csv')
+write.csv(coeffmat,'./stats/DGVMvsMODIS_GPPTrendStatsWeightedV1.csv')
 
 
 

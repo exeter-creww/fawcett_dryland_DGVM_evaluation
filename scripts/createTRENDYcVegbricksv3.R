@@ -4,18 +4,18 @@ library(rgdal)
 library(Kendall)
 library(trend)
 library(scales)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(ncdf4)
 library(gridExtra)
 library(rasterVis)
 library(tls)
-#clean imports
 
+setwd('D:/Driving_C')
 
 #read DGVM data and calculate veg carbon means per year 
 #calculate TRENDY means without SDGVM, LPJ-wsl, LPJ Bern and VISIT
 
 #4 dimensional netcdf
-ncin <- nc_open(paste0("D:/Driving_C/DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
+ncin <- nc_open(paste0("./DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
 
 print(ncin)
 
@@ -43,4 +43,4 @@ projection(TRENDYmeanbrick) <- CRS("+init=epsg:4326")
 
 nc_close(ncin)
 
-writeRaster(TRENDYmeanbrick,'D:/Driving_C/DGVM/TRENDYcVeg2011_2018v3.tif')
+writeRaster(TRENDYmeanbrick,'./DGVM/TRENDYcVeg2011_2018v3.tif')

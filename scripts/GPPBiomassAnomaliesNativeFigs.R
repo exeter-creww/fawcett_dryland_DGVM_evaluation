@@ -1,3 +1,8 @@
+#Temporal analysis of GPP and AGC over 1) drylands in four continents with LVOD data coverage or 2) globally (for GPP and model time series)
+#creates time series plots per model and observation dataset
+#includes comparison of cVeg and cSoil from model time series since 1901
+
+
 library(mblm)
 library(viridis)
 library(rgdal)
@@ -10,17 +15,15 @@ library(pals)
 library(scales)
 library(rgeos)
 library(reshape2)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(ncdf4)
 
-#Temporal analysis of GPP and AGC over 1) drylands in four continents with LVOD data coverage or 2) globally (for GPP and model time series)
-#creates time series plots per model and observation dataset
-#includes comparison of cVeg and cSoil from model time series since 1901
+setwd('D:/Driving_C')
 
 #continent outlines for plotting and region subsetting
-continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
+continentshapes <- readOGR(dsn = getwd(), layer = "WorldContinents")
 contnrlist <- c(1,6,3,4)#number in continent shapefiles
 
-NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
+NorthAmericaShape <- readOGR(dsn = getwd(), layer = "NorthAmericaNoGreenland")
 contsfordisp <- aggregate(continentshapes,dissolve=T)
 
 yearlistGPP <- seq(2003,2018,1)
@@ -32,19 +35,19 @@ cVegVODcompdf <- data.frame(year=yearlistC)
 cVegalldf <- data.frame(year=yearlistmod)
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclassraster <- raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclassraster <- raster("./Plots/drylandclassclipfin.tif")
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclass <- readOGR(dsn = 'D:/Driving_C', layer = "drylandsglobal")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
-drylandclassSub <- readOGR(dsn = 'D:/Driving_C', layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclass <- readOGR(dsn = getwd(), layer = "drylandsglobal")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclassSub <- readOGR(dsn = getwd(), layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
 
 
 #preprocessing of VOD data to median annual composites can be found in LVODprocessingAnnualStackFin.R
 
-VODannualstacktot <- stack("D:/Driving_C/LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
+VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
 
 #preprocessing of PMLv2 GPP in GEE
-GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
 
 #2011 to 2018 (2010 does not have reliable values, extend to 2019 once TRENDY runs available)
 VODstack <- VODannualstacktot[[2:9]]
@@ -57,8 +60,8 @@ GPPfinbrick <- GPPstack/100
 
 #TRENDY mean data bricks
 
-TRENDYcVegbrick <- brick('D:/Driving_C/DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to Mg C per ha
-TRENDYGPPbrick <- brick('D:/Driving_C/DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to Mg C per ha
+TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to Mg C per ha
+TRENDYGPPbrick <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to Mg C per ha
 
 ##############
 #GPP plots
@@ -108,7 +111,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #GPP extracted from native resolution models
   
-  GPPPMLcompAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
+  GPPPMLcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
   
   
   df <- cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
@@ -201,14 +204,14 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   GPPtempstatsresdf <- data.frame(model=names(df[2:14]),bias=modelBiasGPP,variance=modelVarianceGPP)
    
-  write.table(GPPtempstatsresdf,"D:/Driving_C/stats/TRENDYmodelsGPPstats_2003_2018.csv",row.names=F)
+  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",row.names=F)
   
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   
   
   TStrends <- apply(df,2,fun2)
   
-  write.table(TStrends,"D:/Driving_C/stats/TRENDYmodelsGPPtrends_2003_2018.csv",row.names=F)
+  write.table(TStrends,"./stats/TRENDYmodelsGPPtrends_2003_2018.csv",row.names=F)
   
   ##############
   #AGC plots
@@ -224,7 +227,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #writeOGR(VODdatamaskpoly,'D:/Driving_C/shapefiles','VODdatamask',driver='ESRI Shapefile')
   
   #intersection of VODdatamaskpoly and drylandsubconts done in ArcMap (error in R)
-  VODdatamaskdrylands <- readOGR('D:/Driving_C','VODdatamaskdrylands')
+  VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
   
   
   drylandVODpixels <- mask(drylandclassraster,VODdatamaskdrylands)
@@ -271,7 +274,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
   
   
-  cVegVODcompAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018.csv"))
+  cVegVODcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018.csv"))
   
   
   df <- cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
@@ -364,21 +367,21 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   AGCtempstatsresdf <- data.frame(model=names(df[2:14]),bias=modelBiasAGC,variance=modelVarianceAGC)
   
-  write.table(AGCtempstatsresdf,"D:/Driving_C/stats/TRENDYmodelscVegstats_2011_2018.csv",row.names=F)
+  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",row.names=F)
   
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   
   
   TStrends <- apply(df,2,fun2)
   
-  write.table(TStrends,"D:/Driving_C/stats/TRENDYmodelsAGCtrends_2011_2018.csv",row.names=F)
+  write.table(TStrends,"./stats/TRENDYmodelsAGCtrends_2011_2018.csv",row.names=F)
   
   #############
   #model time series of cVeg and cSoil since 1901
   
   #cVeg all models native resolution
   
-  cVegAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_1901_2018.csv"))
+  cVegAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_1901_2018.csv"))
   
   cVegAllModels[,2:13] <-  cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13])
   
@@ -410,7 +413,7 @@ p1 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   
 #cSoil from model native resolutions
 
-cSoilAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
+cSoilAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
 
 cSoilAllModels[,2:13] <-  cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13])
 
@@ -444,8 +447,8 @@ plot(test)
 
 #Total Dryland biomass
 
-cVegAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_1901_2018.csv"))
-cSoilAllModels <- data.frame(read.csv("D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
+cVegAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_1901_2018.csv"))
+cSoilAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
 
 
 cTotalAllModels <- cSoilAllModels+cVegAllModels

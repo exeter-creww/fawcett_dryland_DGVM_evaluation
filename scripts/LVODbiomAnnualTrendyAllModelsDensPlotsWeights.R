@@ -23,9 +23,11 @@ library(cccrm)
 library(exactextractr)
 library(sf)
 
+setwd('D:/Driving_C')
+
 #continent outlines for plotting and region subsetting
-continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
-NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
+continentshapes <- readOGR(dsn = getwd(), layer = "WorldContinents")
+NorthAmericaShape <- readOGR(dsn = getwd(), layer = "NorthAmericaNoGreenland")
 contsfordisp <- aggregate(continentshapes,dissolve=T)
  
 #extract four studied continents: North and South America, Africa and Australia
@@ -33,17 +35,17 @@ contnrlist <- c(1,6,3,4)#number in continent shapefiles
 studycontshapes <- aggregate(continentshapes[contnrlist,],dissolve=T)
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclass <- raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclass <- raster("./Plots/drylandclassclipfin.tif")
 
 #preprocessing of VOD data to median annual composites can be found in LVODprocessingAnnualStackFin.R
 
-VODannualstacktot <- stack("D:/Driving_C/LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
+VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
 
 #2011 to 2018 (2010 does not have reliable values)
 VODstack <- VODannualstacktot[[2:9]]
 
 
-TRENDYmeanbrick <- brick('D:/Driving_C/DGVM/TRENDYcVeg2011_2018v3.tif')
+TRENDYmeanbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')
 
 #create longitude based mask and apply to filter out northernmost and southernmost regions
 longmask <- TRENDYmeanbrick[[1]]
@@ -57,7 +59,7 @@ VODstack1deg <- raster::resample(VODstack,TRENDYmeanbrick[[1]])
 
 
 #drylands mask as vectorised from 0.25 deg LVOD data
-VODdatamaskdrylands <- readOGR('D:/Driving_C','VODdatamaskdrylands')
+VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
 
 VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
 
@@ -96,7 +98,7 @@ VODCarbonyearmeansperpoly <- exactextractr::exact_extract(VODCarbonfinmeans,VODd
 VODCarbonyearmeans <- do.call('rbind',VODCarbonyearmeansperpoly)
 
 #load regridded (1 deg) TRENDY models netcdf file and info
-ncin <- nc_open(paste0("D:/Driving_C/DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
+ncin <- nc_open(paste0("./DGVM/trendyv8_S3_cVeg_1901-2018.nc"))
 
 
 modelnames <- ncatt_get(ncin,0,"models")
@@ -262,7 +264,7 @@ rcount <- rcount+1
 grid.arrange(grobs=meanscatterplotlist,nrow=3,ncol=5)                     
 
 #save stats table
-write.csv(coeffmat,'D:/Driving_C/stats/DGVMvsLVOD_CarbonTrendStatsWeightedV1.csv')
+write.csv(coeffmat,'./stats/DGVMvsLVOD_CarbonTrendStatsWeightedV1.csv')
 
 
 ############
@@ -353,9 +355,9 @@ print(JULESbiomtrendplot, split = c(1, 3, 1, 3), more = F)
 #continents for display (no antarctica)
 contsfordispGPP <- aggregate(continentshapes[-7,],dissolve=T)
 
-GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10k.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10k.tif")
 
-TRENDYannualgpp <- brick('D:/Driving_C/DGVM/TRENDYGPP_2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
 
 GPPstackresamp <- resample(GPPstack,TRENDYannualgpp[[1]])
 PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha
