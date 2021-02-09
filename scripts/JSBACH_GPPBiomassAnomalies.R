@@ -5,11 +5,11 @@ library(Kendall)
 library(trend)
 library(ggplot2)
 library(gridExtra)
-library(pals)
 library(scales)
 library(raster)
 library(reshape2)
-library("ncdf4", lib.loc="~/R/win-library/3.4")
+library(sp)
+library(ncdf4)
   
 
 #continent outlines for plotting and region subsetting
@@ -23,24 +23,18 @@ yearlistC <- seq(2011,2018,1)
 yearlistmod <- seq(1901,2018,1)
 
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
-drylandclass <- readOGR(dsn = 'D:/Driving_C', layer = "drylandsglobal")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
-drylandclassSub <- readOGR(dsn = 'D:/Driving_C', layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclass <- readOGR(dsn = getwd(), layer = "drylandsglobal")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclassSub <- readOGR(dsn = getwd(), layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclasssf <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactextractr
+drylandclassSubsf <- st_as_sfc(drylandclassSub) #spatialpolygonsdf to sfc for exactextractr
 
-
-#preprocessing of VOD data to median annual composites can be found in LVODprocessing.R and LVODprocessingAnnualStackFin.R
-
-VODannualstacktot <- stack("D:/Driving_C/LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
+#mask of dryland regions with reliable VOD data, generated from VOD data mask in ArcMap (error with R vectorisation) 
+VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
+VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
 
 #preprocessing of PMLv2 GPP in GEE
 GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 
-#2011 to 2018 (2010 does not have reliable values, extend to 2019 once TRENDY runs available)
-VODstack <- VODannualstacktot[[2:9]]
-
-
-#contnrlist <- c(1,6,3,4)#number in continent shapefiles
-
-    
   gppmodelpath <- 'JSBACH_S3_gpp.nc'
   cVegmodelpath <- 'JSBACH_S3_cVeg.nc'
   #lcpath <- 'OCN_S3_oceanCoverFrac.nc'
@@ -76,11 +70,7 @@ VODstack <- VODannualstacktot[[2:9]]
   modelcVegVODcomp[modelcVegVODcomp==fillvalue$value] <- NA
   modelcVeg[modelcVeg==fillvalue$value] <- NA
   modelcSoil[modelcSoil==fillvalue$value] <- NA
-  #get landcover fraction
- # landcoverfrac <- abs(ncvar_get(lcncin,'oceanCoverFrac',start=c(1,1),count=c(nlonDGVM,nlatDGVM))-1)
-  
-  #for DLEM this is area per grid cell not fraction
-  #lcfraster <- t(raster::flip(raster(landcoverfrac),1))
+
   
   modelgppbrick <- t(raster::flip(brick(modelgpp),1))#no flip  needed for DLEM
   modelcVegVODcompbrick <-  t(raster::flip(brick(modelcVegVODcomp),1))
@@ -118,45 +108,31 @@ VODstack <- VODannualstacktot[[2:9]]
   modelannualcSoil <- modelcSoilbrick
 
   
-  #resample dryland classes to 1 deg (modal aggregation then neares neighbour resampling)
-  #drylandclassag <- aggregate(drylandclass,fact=10,fun=modal)
-  #drylandclassresamp <- resample(drylandclassag,modelannualgpp[[1]],method='ngb')
-  #drylandclassresamp <- drylandclassresamp*longmask
-
-  #drylandmask <- drylandclassresamp>0
-  #drylandmask[drylandmask==0] <- NA
-  
-  #regiondrylandmask <- mask(drylandmask,continentshapes[contnrlist,])
   
   GPPstacksresamp <- raster::resample(GPPstack,modelannualgpp[[1]])
   GPPfinbrick <- GPPstacksresamp/100
   PMLdatamask <- !is.na(sum(GPPfinbrick)) #only use pixels with data valid GPP data for all years
   PMLdatamask[PMLdatamask ==0] <- NA
   
-  VODstackresamp <- raster::resample(VODstack,modelannualcVegVODcomp[[1]])
-  VODfinbrick <- VODstackresamp*37.522 
-  VODdatamask <- !is.na(sum(VODfinbrick))
-  VODdatamask[VODdatamask ==0] <- NA
    # TRENDYmodelGPPbrick <- brick(paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/',TRENDYmodelGPPnames[[j]]))
    modelannualgppmasked <- mask(modelannualgpp ,PMLdatamask)*10
-   modelannualcVegVODcompmasked <- mask(modelannualcVegVODcomp ,VODdatamask)*10
    modelannualcVegmasked <- modelannualcVeg*10
    modelannualcSoilmasked <- modelannualcSoil*10
    
+   
    arearaster <- area(modelannualgppmasked[[1]])*100#*lcfraster
-    
-   VODdatamaskdrylands <- readOGR('D:/Driving_C','VODdatamaskdrylands')
    
    
    #GPP calc
    totalpercell <- arearaster*modelannualgppmasked 
    
    
-   totalglobalextract <- extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   totalglobalextract[,2:17] <- totalglobalextract[,2:17]*totalglobalextract$weight
+   totalglobalextract[,1:16] <- totalglobalextract[,1:16]*totalglobalextract$coverage_fraction
    
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:17]
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
    
    
    totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
@@ -165,33 +141,13 @@ VODstack <- VODannualstacktot[[2:9]]
    
    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/JSBACH_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
    
-   #GPP calc only cells contained
-   totalpercell <- arearaster*modelannualgppmasked 
+   #GPP calc cells touching
    
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   totalglobalextract <- extract(totalpercell,drylandclass,weights=F,small=F,df=T)
+   totalglobalextract[,1:16] <- totalglobalextract[,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
    
-   #totalglobalextract[,2:17] <- totalglobalextract[,2:17]*totalglobalextract$weight
-   
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:17]
-   
-   
-   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
-   
-   dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
-   
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/JSBACH_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
-   
-   #GPP calc only cells contained
-   totalpercell <- arearaster*modelannualgppmasked 
-   
-   
-   totalglobalextract <- extract(totalpercell,drylandclass,weights=F,small=T,df=T)
-   
-   #totalglobalextract[,2:17] <- totalglobalextract[,2:17]*totalglobalextract$weight
-   
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:17]
-   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
    
    totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
    
@@ -199,17 +155,36 @@ VODstack <- VODannualstacktot[[2:9]]
    
    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/JSBACH_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
    
+   
+   #GPP calc only cells contained
+   
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+   
+   containedpixels <- totalglobalextract$coverage_fraction>=1 #only completely covered pixels
+   
+   totalglobalextract <- totalglobalextract[containedpixels,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)
+   
+   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
+   
+   dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
+   
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/JSBACH_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
+   
+   
    #cVeg VOD comp calc
    arearaster <- area(modelannualcVegVODcomp[[1]])*100#*lcfraster
    
-   
    totalpercell <- arearaster*modelannualcVegVODcomp
    
-   totalglobalextract <- extract(totalpercell,VODdatamaskdrylands,weights=T,normalizeWeights=F,df=T)
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,VODdatamaskdryalndssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   totalglobalextract[,2:9] <- totalglobalextract[,2:9]*totalglobalextract$weight
+   totalglobalextract[,1:8] <- totalglobalextract[,1:8]*totalglobalextract$coverage_fraction
    
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:9]
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
+   
    
    totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
    
@@ -217,29 +192,13 @@ VODstack <- VODannualstacktot[[2:9]]
    
    write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_2011_2018.csv",sep=",",row.names = F)
    
-   #cVeg VOD comp calc only cells with centre within
-   totalpercell <- arearaster*modelannualcVegVODcomp 
-   
-   totalglobalextract <- extract(totalpercell,VODdatamaskdrylands,weights=F,small=F,df=T)
-   
-   #totalglobalextract[,2:9] <- totalglobalextract[,2:9]*totalglobalextract$weight
-   
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:9]
-   
-   totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
-   
-   dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
-   
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_2011_2018_contained.csv",sep=",",row.names = F)
-   
    #cVeg VOD comp calc all cells touched
-   totalpercell <- arearaster*modelannualcVegVODcomp
    
-   totalglobalextract <- extract(totalpercell,VODdatamaskdrylands,weights=F,small=T,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   #totalglobalextract[,2:9] <- totalglobalextract[,2:9]*totalglobalextract$weight
+   totalglobalextract[,1:8] <- totalglobalextract[,1:8]#*totalglobalextract$coverage_fraction
    
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[2:9]
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
    
    totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
    
@@ -247,33 +206,54 @@ VODstack <- VODannualstacktot[[2:9]]
    
    write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_2011_2018_extended.csv",sep=",",row.names = F)
    
-    #cVeg global 1901 calc
-    totalpercell <- arearaster*modelannualcVegmasked 
-    
-    totalglobalextract <- extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
-    
-    totalglobalextract[,2:119] <- totalglobalextract[,2:119]*totalglobalextract$weight
-    
-    totalglobal <- colSums(totalglobalextract,na.rm=T)[2:119]
-    
-    totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
-    
-    dfdrylandcVeg <- data.frame(year=yearlistmod,cVeg=totalglobalPgC)
-    
-    write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_1901_2018.csv",sep=",",row.names = F)
-    
-    #cSoil global 1901 calc
-    totalpercell <- arearaster*modelannualcSoilmasked 
-    
-    totalglobalextract <- extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
-    
-    totalglobalextract[,2:119] <- totalglobalextract[,2:119]*totalglobalextract$weight
-    
-    totalglobal <- colSums(totalglobalextract,na.rm=T)[2:119]
-    
-    totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
-    
-    dfdrylandcSoil <- data.frame(year=yearlistmod,cSoil=totalglobalPgC)
-    
-    write.table(dfdrylandcSoil,"D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/JSBACH_dryland_cSoil_1901_2018.csv",sep=",",row.names = F)
-    
+   
+   #cVeg VOD comp calc only cells with centre within
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+   
+   containedpixels <- totalglobalextract$coverage_fraction>=1 #only completely covered pixels
+   
+   totalglobalextract <- totalglobalextract[containedpixels,1:8]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
+   
+   totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
+   
+   dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
+   
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_2011_2018_contained.csv",sep=",",row.names = F)
+   
+   
+   
+   #cVeg global 1901 calc
+   totalpercell <- arearaster*modelannualcVegmasked 
+   
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+   
+   totalglobalextract[,1:118] <- totalglobalextract[,1:118]*totalglobalextract$coverage_fraction
+   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:118]
+   
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
+   
+   dfdrylandcVeg <- data.frame(year=yearlistmod,cVeg=totalglobalPgC)
+   
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/JSBACH_dryland_cVeg_1901_2018.csv",sep=",",row.names = F)
+   
+   #cSoil global 1901 calc
+   totalpercell <- arearaster*modelannualcSoilmasked 
+   
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+   
+   totalglobalextract[,1:118] <- totalglobalextract[,1:118]*totalglobalextract$coverage_fraction
+   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:118]
+   
+   
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
+   
+   dfdrylandcSoil <- data.frame(year=yearlistmod,cSoil=totalglobalPgC)
+   
+   write.table(dfdrylandcSoil,"D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/JSBACH_dryland_cSoil_1901_2018.csv",sep=",",row.names = F)
+   
