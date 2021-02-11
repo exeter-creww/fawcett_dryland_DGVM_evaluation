@@ -89,7 +89,6 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelcSoilbrick <-  t(raster::flip(brick(modelcSoil),1))
   
  
-  
   extent(modelgppbrick) <- c(0, 360, -90, 90)
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
   modelgppbrick <- rotate(modelgppbrick) 

@@ -11,7 +11,6 @@ library(sf)
 library(trend)
 library(ggplot2)
 library(gridExtra)
-library(pals)
 library(scales)
 library(rgeos)
 library(reshape2)
@@ -129,6 +128,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
     scale_colour_manual(values = colpalette)+
     scale_size_manual(values = lwdtest)+
     scale_linetype_manual(values=ltytest)+
+    ylim(0, 35)+
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
     labs(title='a)',y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')
@@ -199,10 +199,12 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #GPP bias and variance statistics
   
-  modelBiasGPP <- colMeans(df[2:14]-drylandGPPPML$GPP)
-  modelVarianceGPP <- colMeans(abs(t(apply(df[2:14],1,'-',colMeans(df[2:14])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
+  dfstats <- df[c(-2,-3)] #remove observed and year columns
   
-  GPPtempstatsresdf <- data.frame(model=names(df[2:14]),bias=modelBiasGPP,variance=modelVarianceGPP)
+  modelBiasGPP <- colMeans(dfstats[1:13]-drylandGPPPML$GPP)
+  modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
+  
+  GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP)
    
   write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",row.names=F)
   
@@ -228,11 +230,6 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #intersection of VODdatamaskpoly and drylandsubconts done in ArcMap (error in R)
   VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
-  
-  
-  drylandVODpixels <- mask(drylandclassraster,VODdatamaskdrylands)
-  drylandVODpixelsN <- cellStats(!is.na(drylandVODpixels),sum,na.rm=T)
-  drylandtotpixelsN <- cellStats(!is.na(mask(drylandclassraster,drylandclassSub)),sum,na.rm=T)
   
   arearaster <- area(VODCarbonfinbrick)*100# 100 hectares in 1 km2
   
@@ -362,10 +359,12 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #AGC bias and variance statistics
   
-  modelBiasAGC <- colMeans(df[2:14]- drylandcVegVOD$LVOD)
-  modelVarianceAGC <- colMeans(abs(t(apply(df[2:14],1,'-',colMeans(df[2:14])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
+  dfstats <- df[c(-2,-3)] #remove observed and year columns
   
-  AGCtempstatsresdf <- data.frame(model=names(df[2:14]),bias=modelBiasAGC,variance=modelVarianceAGC)
+  modelBiasAGC <- colMeans(dfstats[1:13]- drylandcVegVOD$LVOD)
+  modelVarianceAGC <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
+  
+  AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC)
   
   write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",row.names=F)
   
@@ -443,7 +442,7 @@ p2 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   #plot.margin=margin(1,1,1,1,'cm')
   labs(y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b)')
 
-plot(test)
+#plot(test)
 
 #Total Dryland biomass
 
@@ -477,7 +476,7 @@ p3 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   ylim(c(-55,55))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
