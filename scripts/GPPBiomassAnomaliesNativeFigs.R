@@ -15,6 +15,8 @@ library(scales)
 library(rgeos)
 library(reshape2)
 library(ncdf4)
+library(raster)
+library(grid)
 
 setwd('D:/Driving_C')
 
@@ -208,12 +210,16 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
    
   write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",row.names=F)
   
-  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+  #calculate sen's slope and pvalue for each series
+  
+  fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
   
   
-  TStrends <- apply(df,2,fun2)
+  TStrendslope <- apply(df,2,fun1)
+  TStrendpval <- apply(df,2,fun2)
   
-  write.table(TStrends,"./stats/TRENDYmodelsGPPtrends_2003_2018.csv",row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018.csv",row.names=F)
   
   ##############
   #AGC plots
@@ -368,12 +374,16 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",row.names=F)
   
-  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   
   
-  TStrends <- apply(df,2,fun2)
+  fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
   
-  write.table(TStrends,"./stats/TRENDYmodelsAGCtrends_2011_2018.csv",row.names=F)
+  
+  TStrendslope <- apply(df,2,fun1)
+  TStrendpval <- apply(df,2,fun2)
+  
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018.csv",row.names=F)
   
   #############
   #model time series of cVeg and cSoil since 1901
@@ -498,22 +508,90 @@ deltacSoildf <- cSoildf[118,]-cSoildf[1,]
 deltaTotaldf <- cTotaldf[118,]-cTotaldf[1,]
 
 
-deltacdf <- data.frame(deltacVeg=unlist(deltacVegdf),deltacSoil=unlist(deltacSoildf),names=names(deltacVegdf),deltaTotaldf=unlist(deltaTotaldf),modelnr=seq(1,12,1))
+colPal <- colorRampPalette(c("red", "grey", "blue"))
 
-test <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,color=deltaTotaldf,label=modelnr))+
+legend_entry <- paste("  ", seq(1,12,1), names(deltacVegdf))
+
+
+deltacdf <- data.frame(deltacVeg=unlist(deltacVegdf),deltacSoil=unlist(deltacSoildf),legend_entry,names=names(deltacVegdf),deltaTotaldf=unlist(deltaTotaldf),modelnr=seq(1,12,1))
+
+ymin <- min(deltacdf$deltacSoil)
+ymax <- 55#max(deltacdf$deltacSoil)
+
+y_values_legend <- ymax-(ymax-ymin)*(1:nrow(deltacdf))/nrow(deltacdf)
+
+p1 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
   geom_hline(aes(yintercept=0),lty=2,col='grey')+
   geom_vline(aes(xintercept=0),lty=2,col='grey')+
-  geom_point()+
+  geom_point(aes(colour = deltaTotaldf))+
+  theme_bw()+
   xlim(c(-55,55))+
   ylim(c(-55,55))+
+  scale_colour_gradient2(low='red',mid='grey',high='blue')+
+  #(colours = terrain.colors(10))+
   geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
- # geom_point(aes(colour=color))+
-  scale_color_gradientn(colours = viridis(5))+
+  geom_text(aes(label=names, x=Inf, y=y_values_legend, hjust=0)) +
+  #geom_point(aes(colour=color))+
+  #scale_color_gradientn(colours = viridis(5))+
   labs(colour=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x=bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]"))
 
-plot(test)
-  
+plot(p1)
 
-  
+# add numbered legend, final plot is WIP, currently created externally
+
+p2 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
+  geom_hline(aes(yintercept=0),lty=2,col='grey')+
+  geom_vline(aes(xintercept=0),lty=2,col='grey')+
+  geom_point(aes(colour = deltaTotaldf))+
+  theme_bw()+
+  xlim(c(-55,55))+
+  ylim(c(-55,55))+
+  scale_colour_gradient2(low='red',mid='grey',high='blue')+
+  #(colours = terrain.colors(10))+
+  geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
+  geom_text(aes(label=legend_entry, x=Inf, y=y_values_legend, hjust=0)) +
+  theme(legend.position='false',plot.margin = unit(c(1,15,1,1), "lines"))+
+  #geom_point(aes(colour=color))+
+  #scale_color_gradientn(colours = viridis(5))+
+  labs(colour=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x=bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]"))
+
+
+gt <- ggplot_gtable(ggplot_build(p2))
+gt$layout$clip[gt$layout$name == "panel"] <- "off"
+grid.draw(gt)
+
+
+
+#TRENDY mean stats comparison
+
+#quantify divergence of models from the TRENDY mean (1901-2018)
+
+
+cVegTRENDYmean <- apply(cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13]),1,mean)
+cVegTRENDYSD <- apply(cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13]),1,sd)
+
+cVegTRENDYSDend <- cVegTRENDYSD[118]
+cVegTRENDYmeanend <- cVegTRENDYmean[118]
+
+cSoilTRENDYmean <- apply(cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13]),1,mean)
+cSoilTRENDYSD <- apply(cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13]),1,sd)
+
+cSoilTRENDYSDend <- cSoilTRENDYSD[118]
+cSoilTRENDYmeanend <- cSoilTRENDYmean[118]
+
+
+cTotalTRENDYmean <- apply(cTotalAllModels[,2:13]-as.list(cTotalAllModels[1,2:13]),1,mean)
+cTotalTRENDYSD <- apply(cTotalAllModels[,2:13]-as.list(cTotalAllModels[1,2:13]),1,sd)
+
+cTotalTRENDYSDend <- cTotalTRENDYSD[118]
+cTotalTRENDYmeanend <- cTotalTRENDYmean[118]
+
+cVegdifftoTRENDY <- (deltacVegdf-cVegTRENDYmeanend)/cVegTRENDYSDend
+cSoildifftoTRENDY <- (deltacSoildf-cSoilTRENDYmeanend)/cSoilTRENDYSDend
+totaldifftoTRENDY <- (deltaTotaldf-cTotalTRENDYmeanend)/cTotalTRENDYSDend
+
+
+write.table(data.frame(modelname=names(cVegdifftoTRENDY),cVegdeviation=unlist(cVegdifftoTRENDY),cSoildeviation=unlist(cSoildifftoTRENDY),cTotaldeviation=unlist(totaldifftoTRENDY)),"./stats/TRENDYmodelsdeviation_1901_2018.csv",row.names=F,sep=',')
+
 nc_close(ncin)
                
