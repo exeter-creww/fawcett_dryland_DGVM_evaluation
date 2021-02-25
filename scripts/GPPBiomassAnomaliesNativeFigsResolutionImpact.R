@@ -24,14 +24,14 @@ modelGPPregular<- data.frame(GPPregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/
 modelGPPcontained<- data.frame(GPPcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_contained.csv"))[2:13])
 modelGPPextended<- data.frame(GPPextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_extended.csv"))[2:13])
 
-modelGPP <- data.frame(modelGPPregular,modelGPPcontained,modelGPPextended,modelnames=row.names(modelGPPregular))
+modelGPP <- data.frame(modelGPPcontained,modelGPPregular,modelGPPextended,modelnames=row.names(modelGPPregular))
 
 melted <- melt(modelGPP,id.vars='modelnames')
 
 p<-ggplot(data=melted,aes(x=variable, y=value))+#, aes(x=dose, y=len)) +
   geom_bar(aes(), color='black',stat="identity")+
 labs(y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='method')+
-  scale_x_discrete(labels=c("GPPregular" = "exact", "GPPcontained" = "contained",
+  scale_x_discrete(labels=c( "GPPcontained" = "contained","GPPregular" = "exact",
                             "GPPextended" = "extended"))+
  
   facet_wrap(~ modelnames)+
@@ -46,14 +46,14 @@ modelcVegregular<- data.frame(cVegregular=colMeans(read.csv("./DGVM/DGVMdrylandT
 modelcVegcontained<- data.frame(cVegcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_contained.csv"))[2:13])
 modelcVegextended<- data.frame(cVegextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_extended.csv"))[2:13])
 
-modelcVeg <- data.frame(modelcVegregular,modelcVegcontained,modelcVegextended,modelnames=row.names(modelcVegregular))
+modelcVeg <- data.frame(modelcVegcontained,modelcVegregular,modelcVegextended,modelnames=row.names(modelcVegregular))
 
 melted <- melt(modelcVeg,id.vars='modelnames')
 
 p<-ggplot(data=melted,aes(x=variable, y=value))+#, aes(x=dose, y=len)) +
   geom_bar(aes(), color='black',stat="identity")+
   labs(y=bquote("AGC " ~ "["~ Pg ~ C ~ "]"),x='method')+
-  scale_x_discrete(labels=c("cVegregular" = "exact", "cVegcontained" = "contained",
+  scale_x_discrete(labels=c("cVegcontained" = "contained","cVegregular" = "exact", 
                             "cVegextended" = "extended"))+
   
   facet_wrap(~ modelnames)+

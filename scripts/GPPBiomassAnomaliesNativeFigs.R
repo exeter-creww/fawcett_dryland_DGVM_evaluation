@@ -204,6 +204,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   dfstats <- df[c(-2,-3)] #remove observed and year columns
   
   modelBiasGPP <- colMeans(dfstats[1:13]-drylandGPPPML$GPP)
+  
   modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
   
   GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP)
