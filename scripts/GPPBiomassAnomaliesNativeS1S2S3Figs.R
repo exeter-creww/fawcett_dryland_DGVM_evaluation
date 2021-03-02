@@ -109,10 +109,10 @@ p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) +
     #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
     #geom_line(aes(x = years,y=JULES),colour="orange")+
     theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-          panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+          panel.background = element_blank(), axis.line = element_line(colour = "black"))+
    geom_hline(aes(yintercept=0),lty=2)+
     #plot.margin=margin(1,1,1,1,'cm')
-    labs(y=bquote(Delta ~" cVeg S1" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='a)')
+    labs(y=bquote(Delta ~" cVeg S1" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title=bquote('a)' ~ CO[2] ~'change'))
   
 p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) + 
   geom_line(aes(colour=variable,lwd=variable,lty=variable))+
@@ -123,10 +123,10 @@ p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) +
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" cVeg S2 - S1" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b)')
+  labs(y=bquote(Delta ~" cVeg S2 - S1" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b) climate change')
 
 p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) + 
   geom_line(aes(colour=variable,lwd=variable,lty=variable))+
@@ -137,15 +137,115 @@ p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) +
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" cVeg S3 - S2" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c)')
+  labs(y=bquote(Delta ~" cVeg S3 - S2" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c) land-use change')
 
 
-grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
+p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-40,40))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cVeg S3" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='d) net change')
 
-  
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
+
+
+#interquartile range
+
+cVegAllModelsS3minusS2 <- cVegAllModelsS3
+cVegAllModelsS3minusS2[,2:13] <- cVegAllModelsS3[,2:13]-cVegAllModelsS2[,2:13]
+
+cVegAllModelsS2minusS1 <- cVegAllModelsS3
+cVegAllModelsS2minusS1[,2:13] <- cVegAllModelsS2[,2:13]-cVegAllModelsS1[,2:13]
+
+cVegAllModelsS1mean <- apply(cVegAllModelsS1[,2:13],1,mean,na.rm=T)
+cVegAllModelsS3mean <- apply(cVegAllModelsS3[,2:13],1,mean,na.rm=T)
+
+cVegAllModelsS2minusS1mean <- apply(cVegAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
+cVegAllModelsS3minusS2mean <- apply(cVegAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+
+cVegAllModelsS1_Quartlower<- apply(cVegAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS1_Quartupper <-  apply(cVegAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS3_Quartlower<- apply(cVegAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS3_Quartupper <-  apply(cVegAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS2minusS1_Quartlower<- apply(cVegAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS2minusS1_Quartupper <-  apply(cVegAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS3minusS2_Quartlower<- apply(cVegAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS3minusS2_Quartupper <-  apply(cVegAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+
+#cVeg ribbon plots
+
+cVegS1ribbonplotdf <- data.frame(years=cVegAllModelsS1$year,TRENDYmean=cVegAllModelsS1mean,TRENDY_Quartlower=cVegAllModelsS1_Quartlower,TRENDY_Quartupper=cVegAllModelsS1_Quartupper)
+p1 <- ggplot(cVegS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-25,25))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cVeg S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('e)' ~ CO[2] ~'change'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cVegS2minusS1ribbonplotdf <- data.frame(years=cVegAllModelsS2minusS1$year,TRENDYmean=cVegAllModelsS2minusS1mean,TRENDY_Quartlower=cVegAllModelsS2minusS1_Quartlower,TRENDY_Quartupper=cVegAllModelsS2minusS1_Quartupper)
+p2 <- ggplot(cVegS2minusS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-25,25))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cVeg S2 - S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='f) climate change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cVegS3minusS2ribbonplotdf <- data.frame(years=cVegAllModelsS3minusS2$year,TRENDYmean=cVegAllModelsS3minusS2mean,TRENDY_Quartlower=cVegAllModelsS3minusS2_Quartlower,TRENDY_Quartupper=cVegAllModelsS3minusS2_Quartupper)
+p3 <- ggplot(cVegS3minusS2ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-25,25))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cVeg S3 - S2" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='g) land-use change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cVegS3ribbonplotdf <- data.frame(years=cVegAllModelsS3$year,TRENDYmean=cVegAllModelsS3mean,TRENDY_Quartlower=cVegAllModelsS3_Quartlower,TRENDY_Quartupper=cVegAllModelsS3_Quartupper)
+p4 <- ggplot(cVegS3ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-25,25))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cVeg S3" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='h) net change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
+
 #cSoil from model native resolutions
 
 cSoilAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
@@ -182,14 +282,14 @@ p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-40,40))+
+  ylim(c(-50,50))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" cSoil S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='a)')
+  labs(y=bquote(Delta ~" cSoil S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title=bquote('a)' ~ CO[2] ~'change'))
 
 #melted <- melt(dfallyears,id.vars='years')
 p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) + 
@@ -197,14 +297,14 @@ p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-40,40))+
+  ylim(c(-50,50))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" cSoil S2 - S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b)')
+  labs(y=bquote(Delta ~" cSoil S2 - S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b) climate change')
 
 #melted <- melt(dfallyears,id.vars='years')
 p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) + 
@@ -212,16 +312,307 @@ p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-40,40))+
+  ylim(c(-50,50))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cSoil S3 - S2 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c) land-use change')
+
+p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-50,50))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cSoil S3" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='d) net change')
+
+
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
+
+
+
+#cSoil Ribbon plots
+
+
+#interquartile range
+
+cSoilAllModelsS3minusS2 <- cSoilAllModelsS3
+cSoilAllModelsS3minusS2[,2:13] <- cSoilAllModelsS3[,2:13]-cSoilAllModelsS2[,2:13]
+
+cSoilAllModelsS2minusS1 <- cSoilAllModelsS3
+cSoilAllModelsS2minusS1[,2:13] <- cSoilAllModelsS2[,2:13]-cSoilAllModelsS1[,2:13]
+
+cSoilAllModelsS1mean <- apply(cSoilAllModelsS1[,2:13],1,mean,na.rm=T)
+cSoilAllModelsS3mean <- apply(cSoilAllModelsS3[,2:13],1,mean,na.rm=T)
+
+cSoilAllModelsS2minusS1mean <- apply(cSoilAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
+cSoilAllModelsS3minusS2mean <- apply(cSoilAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+
+cSoilAllModelsS1_Quartlower<- apply(cSoilAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS1_Quartupper <-  apply(cSoilAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS3_Quartlower<- apply(cSoilAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS3_Quartupper <-  apply(cSoilAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS2minusS1_Quartlower<- apply(cSoilAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS2minusS1_Quartupper <-  apply(cSoilAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS3minusS2_Quartlower<- apply(cSoilAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS3minusS2_Quartupper <-  apply(cSoilAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+
+#cSoil ribbon plots
+
+cSoilS1ribbonplotdf <- data.frame(years=cSoilAllModelsS1$year,TRENDYmean=cSoilAllModelsS1mean,TRENDY_Quartlower=cSoilAllModelsS1_Quartlower,TRENDY_Quartupper=cSoilAllModelsS1_Quartupper)
+p1 <- ggplot(cSoilS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-15,15))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cSoil S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('e)' ~ CO[2] ~'change'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cSoilS2minusS1ribbonplotdf <- data.frame(years=cSoilAllModelsS2minusS1$year,TRENDYmean=cSoilAllModelsS2minusS1mean,TRENDY_Quartlower=cSoilAllModelsS2minusS1_Quartlower,TRENDY_Quartupper=cSoilAllModelsS2minusS1_Quartupper)
+p2 <- ggplot(cSoilS2minusS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-15,15))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cSoil S2 - S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='f) climate change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cSoilS3minusS2ribbonplotdf <- data.frame(years=cSoilAllModelsS3minusS2$year,TRENDYmean=cSoilAllModelsS3minusS2mean,TRENDY_Quartlower=cSoilAllModelsS3minusS2_Quartlower,TRENDY_Quartupper=cSoilAllModelsS3minusS2_Quartupper)
+p3 <- ggplot(cSoilS3minusS2ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-15,15))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cSoil S3 - S2" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='g) land-use change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cSoilS3ribbonplotdf <- data.frame(years=cSoilAllModelsS3$year,TRENDYmean=cSoilAllModelsS3mean,TRENDY_Quartlower=cSoilAllModelsS3_Quartlower,TRENDY_Quartupper=cSoilAllModelsS3_Quartupper)
+p4 <- ggplot(cSoilS3ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-15,15))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cSoil S3" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='h) net change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
+
+
+#cEco plots
+
+#cEco from model native resolutions
+
+cEcoAllModelsS3 <- cVegAllModelsS3
+cEcoAllModelsS2 <- cVegAllModelsS2
+cEcoAllModelsS1 <- cVegAllModelsS1
+
+
+cEcoAllModelsS3[,2:13] <-  cVegAllModelsS3[,2:13]+cSoilAllModelsS3[,2:13]
+cEcoAllModelsS2[,2:13] <-  cVegAllModelsS2[,2:13]+cSoilAllModelsS2[,2:13]
+cEcoAllModelsS1[,2:13] <-  cVegAllModelsS1[,2:13]+cSoilAllModelsS1[,2:13]
+
+meltedS3 <- melt(cEcoAllModelsS3,id.vars='year')
+
+meltedS2 <- melt(cEcoAllModelsS2,id.vars='year')
+
+meltedS1 <- melt(cEcoAllModelsS1,id.vars='year')
+
+meltedS2minusS1<- meltedS2
+meltedS2minusS1$value <- meltedS2$value-meltedS1$value
+
+meltedS3minusS2<- meltedS3
+meltedS3minusS2$value <- meltedS3$value-meltedS2$value
+
+colpalette <- hue_pal()(12)
+colpalette <- c(colpalette,"#909090")
+
+ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+
+lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+
+#melted <- melt(dfallyears,id.vars='years')
+p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-60,60))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" cSoil S3 - S2 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c)')
+  labs(y=bquote(Delta ~" cEco S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title=bquote('a)' ~ CO[2] ~'change'))
+
+#melted <- melt(dfallyears,id.vars='years')
+p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-60,60))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cEco S2 - S1 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b) climate change')
+
+#melted <- melt(dfallyears,id.vars='years')
+p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-60,60))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cEco S3 - S2 " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c) land-use change')
+
+p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) + 
+  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  scale_colour_manual(values = colpalette)+
+  scale_size_manual(values = lwdtest)+
+  scale_linetype_manual(values = ltytest)+
+  ylim(c(-60,60))+
+  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
+  #geom_line(aes(x = years,y=JULES),colour="orange")+
+  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0),lty=2)+
+  #plot.margin=margin(1,1,1,1,'cm')
+  labs(y=bquote(Delta ~" cEco S3" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='d) net change')
+
+
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
 
 
 
-grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
+#cEco Ribbon plots
 
+
+#interquartile range
+
+cEcoAllModelsS3minusS2 <- cEcoAllModelsS3
+cEcoAllModelsS3minusS2[,2:13] <- cEcoAllModelsS3[,2:13]-cEcoAllModelsS2[,2:13]
+
+cEcoAllModelsS2minusS1 <- cEcoAllModelsS3
+cEcoAllModelsS2minusS1[,2:13] <- cEcoAllModelsS2[,2:13]-cEcoAllModelsS1[,2:13]
+
+cEcoAllModelsS1mean <- apply(cEcoAllModelsS1[,2:13],1,mean,na.rm=T)
+cEcoAllModelsS3mean <- apply(cEcoAllModelsS3[,2:13],1,mean,na.rm=T)
+
+cEcoAllModelsS2minusS1mean <- apply(cEcoAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
+cEcoAllModelsS3minusS2mean <- apply(cEcoAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+
+cEcoAllModelsS1_Quartlower<- apply(cEcoAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS1_Quartupper <-  apply(cEcoAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS3_Quartlower<- apply(cEcoAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS3_Quartupper <-  apply(cEcoAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS2minusS1_Quartlower<- apply(cEcoAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS2minusS1_Quartupper <-  apply(cEcoAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS3minusS2_Quartlower<- apply(cEcoAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS3minusS2_Quartupper <-  apply(cEcoAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+
+#cEco ribbon plots
+
+cEcoS1ribbonplotdf <- data.frame(years=cEcoAllModelsS1$year,TRENDYmean=cEcoAllModelsS1mean,TRENDY_Quartlower=cEcoAllModelsS1_Quartlower,TRENDY_Quartupper=cEcoAllModelsS1_Quartupper)
+p1 <- ggplot(cEcoS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-40,40))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cEco S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('e)' ~ CO[2] ~'change'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cEcoS2minusS1ribbonplotdf <- data.frame(years=cEcoAllModelsS2minusS1$year,TRENDYmean=cEcoAllModelsS2minusS1mean,TRENDY_Quartlower=cEcoAllModelsS2minusS1_Quartlower,TRENDY_Quartupper=cEcoAllModelsS2minusS1_Quartupper)
+p2 <- ggplot(cEcoS2minusS1ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-40,40))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cEco S2 - S1" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='f) climate change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cEcoS3minusS2ribbonplotdf <- data.frame(years=cEcoAllModelsS3minusS2$year,TRENDYmean=cEcoAllModelsS3minusS2mean,TRENDY_Quartlower=cEcoAllModelsS3minusS2_Quartlower,TRENDY_Quartupper=cEcoAllModelsS3minusS2_Quartupper)
+p3 <- ggplot(cEcoS3minusS2ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-40,40))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cEco S3 - S2" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='g) land-use change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cEcoS3ribbonplotdf <- data.frame(years=cEcoAllModelsS3$year,TRENDYmean=cEcoAllModelsS3mean,TRENDY_Quartlower=cEcoAllModelsS3_Quartlower,TRENDY_Quartupper=cEcoAllModelsS3_Quartupper)
+p4 <- ggplot(cEcoS3ribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(c(-40,40))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cEco S3" ~ "["~ Pg ~ C ~ "]")) +
+  labs(title='h) net change')+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))

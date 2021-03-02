@@ -591,8 +591,7 @@ cVegdifftoTRENDY <- (deltacVegdf-cVegTRENDYmeanend)/cVegTRENDYSDend
 cSoildifftoTRENDY <- (deltacSoildf-cSoilTRENDYmeanend)/cSoilTRENDYSDend
 totaldifftoTRENDY <- (deltaTotaldf-cTotalTRENDYmeanend)/cTotalTRENDYSDend
 
-
-write.table(data.frame(modelname=names(cVegdifftoTRENDY),cVegdeviation=unlist(cVegdifftoTRENDY),cSoildeviation=unlist(cSoildifftoTRENDY),cTotaldeviation=unlist(totaldifftoTRENDY)),"./stats/TRENDYmodelsdeviation_1901_2018.csv",row.names=F,sep=',')
+write.table(data.frame(modelname=names(cVegdifftoTRENDY),cVegchange=unlist(deltacVegdf),cVegdeviation=unlist(cVegdifftoTRENDY),cSoilchange=unlist(deltacSoildf),cSoildeviation=unlist(cSoildifftoTRENDY),unlist(deltaTotaldf),cTotaldeviation=unlist(totaldifftoTRENDY)),"./stats/TRENDYmodelsdeviation_1901_2018.csv",row.names=F,sep=',')
 
 nc_close(ncin)
                
