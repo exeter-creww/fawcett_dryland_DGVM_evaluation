@@ -36,20 +36,28 @@ TRENDYmeanstack <- apply(TRENDYstack,c(1,2,3),FUN=mean,na.rm=T)
 
 TRENDYbrick <- t(raster::flip(brick(TRENDYmeanstack),1))
 
-
-
-
 extent(TRENDYbrick) <- c(-180, 180, -90, 90)
 projection(TRENDYbrick) <- CRS("+init=epsg:4326")
 
+#get mean of all years per model
+TRENDYmodelsmeanstack <- apply(TRENDYstack,c(1,2,4),FUN=mean,na.rm=T)
+
+TRENDYmodelsmeanbrick <- t(raster::flip(brick(TRENDYmodelsmeanstack),1))
+
+extent(TRENDYmodelsmeanbrick) <- c(-180, 180, -90, 90)
+projection(TRENDYmodelsmeanbrick) <- CRS("+init=epsg:4326")
+
 nc_close(ncin)
 
-
-
-monthyearindex <- rep(1:16,each=12)
+monthyearindex <- rep(1:16, each=12)
  
+test <- apply(TRENDYstack,c(1,2,monthyearindex,4),FUN=mean,na.rm=T)
+
 TRENDYannualgpp <- stackApply(TRENDYbrick,monthyearindex,fun=mean)
 TRENDYannualgpp <- TRENDYannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
+TRENDYmodelsannualgpp <- TRENDYmodelsmeanbrick*31556952 
 
 writeRaster(TRENDYannualgpp,'./DGVM/TRENDYGPP_2003_2018v3.tif',overwrite=T)
+
+writeRaster(TRENDYmodelsannualgpp,'./DGVM/TRENDYpermodelGPP2003_2018v3.tif',overwrite=T)

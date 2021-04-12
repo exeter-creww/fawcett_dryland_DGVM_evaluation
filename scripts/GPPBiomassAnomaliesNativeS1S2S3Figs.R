@@ -74,7 +74,6 @@ TRENDYGPPbrick <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to M
   cVegAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_S2_drylands_1901_2018.csv"))
   cVegAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_S1_drylands_1901_2018.csv"))
   
-
   cVegAllModelsS3[,2:13] <-  cVegAllModelsS3[,2:13]-as.list(cVegAllModelsS3[1,2:13])
   cVegAllModelsS2[,2:13] <-  cVegAllModelsS2[,2:13]-as.list(cVegAllModelsS2[1,2:13])
   cVegAllModelsS1[,2:13] <-  cVegAllModelsS1[,2:13]-as.list(cVegAllModelsS1[1,2:13])

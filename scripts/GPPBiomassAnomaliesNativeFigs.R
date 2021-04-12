@@ -2,7 +2,6 @@
 #creates time series plots per model and observation dataset
 #includes comparison of cVeg and cSoil from model time series since 1901
 
-
 library(mblm)
 library(viridis)
 library(rgdal)
@@ -69,7 +68,7 @@ TRENDYGPPbrick <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to M
 
 #GPP dryland raster mask, to replace with exactextractr!
 
-drylandclassresamp <- resample(drylandclassraster,GPPstack[[1]],method='ngb')
+drylandclassresamp <- raster::resample(drylandclassraster,GPPstack[[1]],method='ngb')
 drylandclassPMLresamp <- drylandclassresamp
 
 drylandmaskPML <- drylandclassPMLresamp>0
@@ -82,7 +81,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   PMLdatamask <- !is.na(sum(GPPfinbrick)) #only use pixels with data valid GPP data for all years
   PMLdatamask [PMLdatamask ==0] <- NA
 
-  arearaster <- mask(mask(area(GPPfinbrick)*100,drylandmaskPML),PMLdatamask)# 100 hectares in 1 km2
+  arearaster <- raster::mask(raster::mask(area(GPPfinbrick)*100,drylandmaskPML),PMLdatamask)# 100 hectares in 1 km2
   
   totalpercell <- arearaster*GPPfinbrick
   
@@ -92,10 +91,8 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   drylandGPPPML <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
   
-
   
   #TRENDY mean GPP
-
   
   arearaster <- area(TRENDYGPPbrick[[1]])*100#*lcfraster
   totalpercell <- arearaster*TRENDYGPPbrick 
@@ -113,7 +110,6 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #GPP extracted from native resolution models
   
   GPPPMLcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
-  
   
   df <- cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
   
@@ -135,7 +131,6 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
     labs(title='a)',y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')
-
   
   plot(GPPplot)
 
@@ -150,7 +145,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
 
   #normalize to mean of time series
   dfvar[,-3] <-  df[,-3]-as.list(colMeans(df[,-3]))
-  dfvar <- dfvar[,-1]
+  #dfvar <- dfvar[,-1]
   
 #GPP plot minus mean (variance), detrended
 
@@ -165,20 +160,19 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendintercept <- apply(dfvar,2,median)-TStrendslope*median(seq(1:16))
   
   sigtrendsmask <- TStrendpval<0.05
-  sigtrendsmask[2] <- F #without year vec
+  sigtrendsmask[3] <- F #without year vec
   
   #detrend time series with significant trends
   dfvardetrend <- dfvar
-  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=14, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
-  
+  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   melted <- melt(dfvardetrend,id.vars='year')
   
   colpalette <- hue_pal()(12)
-  colpalette <- c("#000000",colpalette)
+  colpalette <- c("#909090","#000000",colpalette)
   
-  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
-  ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
+  lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
+  ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
   
   
   GPPplotvariance <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
@@ -226,22 +220,25 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   modelBiasGPP <- colMeans(dfstats[1:13]-drylandGPPPML$GPP)
   
-  modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
+  #old sensitivity/variance calculation
+  #modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
   
-  GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP)
+  #mean of MAE between model and 
+  modelVarianceGPP <- colMeans(abs(dfvardetrend[,c(-2,-3)]-dfvardetrend$MODIS)) 
+  
+  GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP,modelmeans=colMeans(dfstats[1:13]),PMLmean=mean(drylandGPPPML$GPP))
    
-  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",row.names=F)
+  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",sep=',',row.names=F)
   
   #calculate sen's slope and pvalue for each series
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
   
-  
   TStrendslope <- apply(df,2,fun1)
   TStrendpval <- apply(df,2,fun2)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018.csv",row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018.csv",sep=',',row.names=F)
   
   ##############
   #AGC plots
@@ -329,9 +326,10 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TRENDY_Quartupper <-  apply(dfvar[,3:14],1,FUN=function(x){quantile(x,0.75)}) 
   
   
+  
   #normalize to mean of time series
   dfvar[,-3] <-  df[,-3]-as.list(colMeans(df[,-3]))
-  dfvar <- dfvar[,-1]
+  #dfvar <- dfvar[,-1]
   
   #GPP plot minus mean (variance), detrended
   
@@ -346,21 +344,23 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendintercept <- apply(dfvar,2,median)-TStrendslope*median(seq(1:8))
   
   sigtrendsmask <- TStrendpval<0.05
-  sigtrendsmask[2] <- F #without year vec
+  sigtrendsmask[3] <- F #without year vec
   
   #detrend time series with significant trends
+
+  #detrend time series with significant trends
   dfvardetrend <- dfvar
-  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:8), nrow=8, ncol=14, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:8), nrow=8, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   
   melted <- melt(dfvardetrend,id.vars='year')
   
   #GPP plot minus mean (variance)
   colpalette <- hue_pal()(12)
-  colpalette <- c("#000000",colpalette)
+  colpalette <- c("#909090","#000000",colpalette)
   
-  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
-  ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
+  lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
+  ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
   
   Cplotvariance <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
     
@@ -411,22 +411,24 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   dfstats <- df[c(-2,-3)] #remove observed and year columns
   
   modelBiasAGC <- colMeans(dfstats[1:13]- drylandcVegVOD$LVOD)
-  modelVarianceAGC <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
   
-  AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC)
+  #old variance/sensitivity calculation
+  #modelVarianceAGC <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
   
-  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",row.names=F)
+  #sensitivity calculation using detrended time series
+  modelVarianceAGC <- colMeans(abs(dfvardetrend[,c(-2,-3)]-dfvardetrend$LVOD)) 
   
+  AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC,modelmeans=colMeans(dfstats[1:13]),LVODmean=mean(drylandcVegVOD$LVOD))
   
+  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",sep=',',row.names=F)
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
   
-  
   TStrendslope <- apply(df,2,fun1)
   TStrendpval <- apply(df,2,fun2)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018.csv",row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018.csv",sep=',',row.names=F)
   
   #############
   #model time series of cVeg and cSoil since 1901
@@ -534,6 +536,74 @@ p3 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
   labs(y=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c)')
+
+grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
+
+
+#ribbon plots of cVeg, cSoil and total since 1901
+
+#interquartile range
+
+
+cSoilAllModels[,2:13] <-  cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13])
+cVegAllModels[,2:13] <-  cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13])
+
+cTotalAllModelsMean <- apply(cTotalAllModels[,2:13],1,mean,na.rm=T)
+cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+
+cSoilAllModelsMean <- apply(cSoilAllModels[,2:13],1,mean,na.rm=T)
+cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+
+cVegAllModelsMean <- apply(cVegAllModels[,2:13],1,mean,na.rm=T)
+cVegAllModels_Quartlower<- apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+
+cVegAllModelsribbonplotdf <- data.frame(years=cVegAllModels$year,TRENDYmean=cVegAllModelsMean,TRENDY_Quartlower=cVegAllModels_Quartlower,TRENDY_Quartupper=cVegAllModels_Quartupper)
+p1 <- ggplot(cVegAllModelsribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+  ylim(c(-55,55))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('d)'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cSoilAllModelsribbonplotdf <- data.frame(years=cSoilAllModels$year,TRENDYmean=cSoilAllModelsMean,TRENDY_Quartlower=cSoilAllModels_Quartlower,TRENDY_Quartupper=cSoilAllModels_Quartupper)
+p2 <- ggplot(cSoilAllModelsribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+  ylim(c(-55,55))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('e)'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
+
+cTotalAllModelsribbonplotdf <- data.frame(years=cTotalAllModels$year,TRENDYmean=cTotalAllModelsMean,TRENDY_Quartlower=cTotalAllModels_Quartlower,TRENDY_Quartupper=cTotalAllModels_Quartupper)
+p3 <- ggplot(cTotalAllModelsribbonplotdf, aes(x = years)) + 
+  theme_classic() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+  ylim(c(-55,55))+
+  xlab('Time [yr]') +
+  ylab(bquote(Delta ~" cTotal " ~ "["~ Pg ~ C ~ "]")) +
+  labs(title=bquote('f)'))+
+  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+  geom_ribbon(aes(ymin =TRENDY_Quartlower,
+                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+
 
 grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
 

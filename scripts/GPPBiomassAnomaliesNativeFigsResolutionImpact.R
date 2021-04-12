@@ -65,6 +65,37 @@ plot(p)
 
 resvec <- c(1,2.8125,1.25,0.5,0.5,1,2,1.875,0.5,1.2,0.5,2)
 
-plot(resvec,modelcVeg$cVegregular/modelcVeg$cVegextended,xlab='resolution',ylab='exact/extended')
-plot(resvec,modelcVeg$cVegcontained/modelcVeg$cVegregular,xlab='resolution',ylab='contained/exact')
+#plot(resvec,modelcVeg$cVegregular/modelcVeg$cVegextended,xlab='resolution',ylab='exact/extended')
+#plot(resvec,modelcVeg$cVegcontained/modelcVeg$cVegregular,xlab='spatial resolution [degrees]',ylab='contained vs exact ratio')
 
+modelcVegresimpactdf <- data.frame(resvec,ratio=modelcVeg$cVegcontained/modelcVeg$cVegregular)
+
+plot1 <- ggplot(modelcVegresimpactdf,aes(x=resvec, y=ratio)) +
+  geom_point() +
+  #scale_color_identity() +
+  theme_bw() +
+  theme_classic() +
+  theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
+  labs(title='a) cVeg',x='spatial resolution [degrees]',y=bquote('contained to exact ratio'))+#,title=paste0('Carbon density: ',DGVMname)) +
+  ylim(c(0,1))+
+  xlim(c(0,3))
+
+
+resvec <- c(1,2.8125,1.25,0.5,0.5,1,2,1.875,0.5,1.2,0.5,2)
+
+#plot(resvec,modelGPP$GPPregular/modelGPP$GPPextended,xlab='resolution',ylab='exact/extended')
+#plot(resvec,modelGPP$GPPcontained/modelGPP$GPPregular,xlab='resolution',ylab='contained/exact')
+
+modelGPPresimpactdf <- data.frame(resvec,ratio=modelGPP$GPPcontained/modelGPP$GPPregular)
+
+plot2 <- ggplot(modelGPPresimpactdf,aes(x=resvec, y=ratio)) +
+  geom_point() +
+  #scale_color_identity() +
+  theme_bw() +
+  theme_classic() +
+  theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
+  labs(title='b) GPP',x='spatial resolution [degrees]',y=bquote('contained to exact ratio'))+#,title=paste0('Carbon density: ',DGVMname)) +
+  ylim(c(0,1))+
+  xlim(c(0,3))
+
+grid.arrange(grobs=list(plot1,plot2),nrow=1,ncol=2)      

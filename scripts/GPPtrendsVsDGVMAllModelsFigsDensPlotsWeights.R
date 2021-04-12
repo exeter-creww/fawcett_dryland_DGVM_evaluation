@@ -12,6 +12,8 @@ library(trend)
 library(ggplot2)
 library(gridExtra)
 library(ncdf4)
+library(deming)
+library(weights)
 
 setwd('D:/Driving_C')
 
@@ -28,7 +30,6 @@ drylandclasssfc <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactex
 GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
 
 years <- seq(2003,2018,1)
-
 
 TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #from kgC per m2 to MgC per ha
 
@@ -53,8 +54,8 @@ meanscatterplotlist <- list()
 meanlineplotlist <- list()
 
 #letter titles not used currently
-#titlenr <- 4
-#titlelist <- c('a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)','p)','q)','r)','s)','t)','u)','v)','w)','x)','y)','z)')
+titlenr <- 3
+titlelist <- c('a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)')
 
 #get PMLv2 GPP pixel values and weights
 PMLGPPyearmeansperpoly <- exactextractr::exact_extract(PMLGPPfinmeans,drylandclasssfc,force_df=T)
@@ -108,7 +109,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
       theme_bw() +
       theme_classic() +
       theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
-      labs(title=DGVMname,x="MODIS GPP",y=bquote("modelled GPP"))+
+      labs(title=paste(titlelist[titlenr],DGVMname),x="MODIS GPP",y=bquote("modelled GPP"))+
       coord_fixed()+
       ylim(c(0,40))+
       xlim(c(0,40))
@@ -156,7 +157,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
     theme_bw() +
     theme_classic() +
     theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
-    labs(title=DGVMname,x="MODIS GPP",y=bquote("modelled GPP"))+
+    labs(title=paste(titlelist[titlenr],DGVMname),x="MODIS GPP",y=bquote("modelled GPP"))+
     coord_fixed()+
     ylim(c(0,40))+
     xlim(c(0,40))
