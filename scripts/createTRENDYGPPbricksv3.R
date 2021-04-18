@@ -50,14 +50,40 @@ projection(TRENDYmodelsmeanbrick) <- CRS("+init=epsg:4326")
 nc_close(ncin)
 
 monthyearindex <- rep(1:16, each=12)
- 
-test <- apply(TRENDYstack,c(1,2,monthyearindex,4),FUN=mean,na.rm=T)
 
 TRENDYannualgpp <- stackApply(TRENDYbrick,monthyearindex,fun=mean)
 TRENDYannualgpp <- TRENDYannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
 TRENDYmodelsannualgpp <- TRENDYmodelsmeanbrick*31556952 
 
+
+#get annual GPP trend per model
+
+TRENDYmodelstrendstack <- stack()
+
+fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+
+for(i in 1:12){
+  
+  TRENDYmodelstack <- TRENDYstack[,,,i]
+  TRENDYmodelbrick <- t(raster::flip(brick(TRENDYmodelstack),1))
+  extent(TRENDYmodelbrick) <- c(-180, 180, -90, 90)
+  projection(TRENDYmodelbrick) <- CRS("+init=epsg:4326")
+  
+  TRENDYmodelannualgpp <- stackApply(TRENDYmodelbrick,monthyearindex,fun=mean)
+  TRENDYmodelannualgpp <- TRENDYmodelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
+
+  #TRENDYmodelstrendstack <- apply(TRENDYstack,c(1,2,4),FUN=fun1)
+  
+  TRENDYmodeltrendgpp <- calc(TRENDYmodelannualgpp,fun1)
+  
+  TRENDYmodelstrendstack <- stack(TRENDYmodelstrendstack,TRENDYmodeltrendgpp)
+  
+}
+
 writeRaster(TRENDYannualgpp,'./DGVM/TRENDYGPP_2003_2018v3.tif',overwrite=T)
 
 writeRaster(TRENDYmodelsannualgpp,'./DGVM/TRENDYpermodelGPP2003_2018v3.tif',overwrite=T)
+
+writeRaster(TRENDYmodelstrendstack,'./DGVM/TRENDYpermodeltrendGPP2003_2018v3.tif',overwrite=T)
+

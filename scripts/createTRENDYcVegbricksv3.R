@@ -64,4 +64,4 @@ writeRaster(TRENDYmeanbrick,'./DGVM/TRENDYcVeg2011_2018v3.tif')
 
 writeRaster(TRENDYmodelsmeanbrick,'./DGVM/TRENDYpermodelcVeg2011_2018v3.tif')
 
-writeRaster(TRENDYmodelstrendbrick,'./DGVM/TRENDYpermodeltrendcVeg2011_2018v3.tif')
+writeRaster(TRENDYmodelstrendbrick,'./DGVM/TRENDYpermodeltrendcVeg2011_2018v3.tif',overwrite=T)

@@ -360,11 +360,17 @@ TRENDYannualdrygpp <- raster::mask(TRENDYannualgpp,drylandmask)
 PMLannualdrygppmean <- calc(PMLannualdrygpp,mean,na.rm=T)
 TRENDYannualdrygppmean <- calc(TRENDYannualdrygpp,mean,na.rm=T)
 
+#trends over time period
+fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+PMLannualdrygpptrend <- calc(PMLannualdrygpp,fun1)
+VODCarbonfintrend <- calc(VODCarbonfinbrick,fun1)
+
 PMLTRENDYDiff <- TRENDYannualdrygppmean-PMLannualdrygppmean
 
 trendMinMax <- getMinMax(PMLTRENDYDiff)
 
 my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")),panel.background=list(col="lightgrey"))
+
 
 differencePMLTRENDY <- diverge0(levelplot(PMLTRENDYDiff,par.settings=my.settings,main=bquote("b) TRENDY-mean GPP - MODIS GPP " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
 
@@ -382,11 +388,10 @@ differenceVODTRENDY <- diverge0(levelplot(VODTRENDYDiff,par.settings=my.settings
 
 plot(differenceVODTRENDY)
 
-my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")))
 VODbiomplot <- levelplot(VODCarbonyearmeans,main=bquote("a) Mean Biomass (L-VOD) " ~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
                          par.settings=my.settings,at=seq(0, cellStats(TRENDYCarbonfinmeans,max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
-                          layer(sp.polygons(contsfordisp,col='grey'))+
-                          layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
+                          latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+
+                          latticeExtra::layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
 
 # TRENDYbiomplot <- levelplot(TRENDYCarbonfinmeans,main=bquote("b) Mean Biomass (TRENDY-mean) "~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
 #                          par.settings=my.settings,at=seq(0, cellStats(TRENDYCarbonfinmeans,max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
@@ -398,8 +403,8 @@ VODbiomplot <- levelplot(VODCarbonyearmeans,main=bquote("a) Mean Biomass (L-VOD)
 #                           layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
 PMLGPPplot <- levelplot(PMLannualdrygppmean,main=bquote("a) Mean GPP (MODIS) " ~ "["~ Mg ~ C ~ ha^{-1} ~ yr^{-1}~"]"),
                         par.settings=my.settings,at=seq(0, cellStats(PMLannualdrygppmean,max), len = 100),margin=FALSE,col.regions=cols2,maxpixels = 2e10,add=T)+
-                          layer(sp.polygons(contsfordisp,col='grey'))+
-                          layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
+                          latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+
+                          latticeExtra::layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
 # TRENDYGPPplot <- levelplot(TRENDYannualdrygppmean,main=bquote("b) Mean GPP (TRENDY-mean) " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),
 #                            par.settings=my.settings,at=seq(0, cellStats(PMLannualdrygppmean,max), len = 100),margin=FALSE,col.regions=cols2,maxpixels = 2e10,add=T)+
 #                           layer(sp.polygons(contsfordisp,col='grey'))+
@@ -412,12 +417,25 @@ PMLGPPplot <- levelplot(PMLannualdrygppmean,main=bquote("a) Mean GPP (MODIS) " ~
 TRENDYmodelsmeanGPP <- brick('./DGVM/TRENDYpermodelGPP2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
 TRENDYmodelsmeancVeg <- brick('./DGVM/TRENDYpermodelcVeg2011_2018v3.tif')*0.4*10
 
+TRENDYmodelstrendGPP <- brick('./DGVM/TRENDYpermodeltrendGPP2003_2018v3.tif')*10
+TRENDYmodelstrendcVeg <- brick('./DGVM/TRENDYpermodeltrendcVeg2011_2018v3.tif')*0.4*10
+
+#models vs obs differences means
 TRENDYmodelsmeanGPPdrylandsdiff <- raster::mask(TRENDYmodelsmeanGPP,drylandmask)-PMLannualdrygppmean 
 names(TRENDYmodelsmeanGPPdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
 TRENDYmodelsmeancVegdrylandsdiff <- raster::mask(TRENDYmodelsmeancVeg,drylandmask)-VODCarbonfinmeans 
 names(TRENDYmodelsmeancVegdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
 
-#GPP plots
+#models vs obs differences trends
+TRENDYmodelstrendGPPdrylandsdiff <- raster::mask(TRENDYmodelstrendGPP,drylandmask)-PMLannualdrygpptrend
+names(TRENDYmodelstrendGPPdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
+TRENDYmodelstrendcVegdrylandsdiff <- raster::mask(TRENDYmodelstrendcVeg,drylandmask)-VODCarbonfintrend
+names(TRENDYmodelstrendcVegdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
+
+
+###GPP plots
+
+#mean
 GPPdiffmaxval <- cellStats(calc(TRENDYmodelsmeanGPPdrylandsdiff,max),max)
 GPPdiffminval <- cellStats(calc(TRENDYmodelsmeanGPPdrylandsdiff,min),min)
 if(abs(GPPdiffmaxval)>abs(GPPdiffminval)){
@@ -430,7 +448,23 @@ if(abs(GPPdiffmaxval)>abs(GPPdiffminval)){
 diverge0(levelplot(TRENDYmodelsmeanGPPdrylandsdiff,par.settings=my.settings,main=bquote("Model - MODIS mean annual GPP " ~ "["~ Mg ~ C ~ ha^{-1} ~ yr^{-1}~"]"),at=seq(-GPPdiffextremeval, GPPdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
   latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
 
-#AGC plots
+#trend
+
+GPPdiffmaxval <- cellStats(calc(TRENDYmodelstrendGPPdrylandsdiff,max),max)
+GPPdiffminval <- cellStats(calc(TRENDYmodelstrendGPPdrylandsdiff,min),min)
+if(abs(GPPdiffmaxval)>abs(GPPdiffminval)){
+  GPPdiffextremeval <- abs(GPPdiffmaxval)
+}else{
+  GPPdiffextremeval <- abs(GPPdiffminval)
+  
+}
+
+diverge0(levelplot(TRENDYmodelstrendGPPdrylandsdiff,par.settings=my.settings,main=bquote("Model - MODIS annual GPP trend " ~ "["~ Mg ~ C ~ ha^{-1} ~ yr^{-1}~"]"),at=seq(-GPPdiffextremeval, GPPdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
+
+###AGC plots
+
+#mean
 
 cVegdiffmaxval <- cellStats(calc(TRENDYmodelsmeancVegdrylandsdiff,max),max)
 cVegdiffminval <- cellStats(calc(TRENDYmodelsmeancVegdrylandsdiff,min),min)
@@ -442,4 +476,18 @@ if(abs(cVegdiffmaxval)>abs(cVegdiffminval)){
 }
 
 diverge0(levelplot(TRENDYmodelsmeancVegdrylandsdiff,par.settings=my.settings,main=bquote("Model - L-VOD mean AGC " ~ "["~ Mg ~ C ~ ha^{-1}~"]"),at=seq(-cVegdiffextremeval, cVegdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
+
+#trend
+
+cVegdiffmaxval <- cellStats(calc(TRENDYmodelstrendcVegdrylandsdiff,max),max)
+cVegdiffminval <- cellStats(calc(TRENDYmodelstrendcVegdrylandsdiff,min),min)
+if(abs(cVegdiffmaxval)>abs(cVegdiffminval)){
+  cVegdiffextremeval <- abs(cVegdiffmaxval)
+}else{
+  cVegdiffextremeval <- abs(cVegdiffminval)
+  
+}
+
+diverge0(levelplot(TRENDYmodelstrendcVegdrylandsdiff,par.settings=my.settings,main=bquote("Model - L-VOD AGC trend " ~ "["~ Mg ~ C ~ ha^{-1}~yr^{-1}~"]"),at=seq(-cVegdiffextremeval, cVegdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
   latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
