@@ -14,7 +14,7 @@ INCLUDE DATA REFERENCE
 This code analyses the following datasets:
 1) VOD dataset supplied by Jean Pierre Wigneron (REFERENCE)
 2) Output from the Trendy land surface model intercomparison (v8; https://sites.exeter.ac.uk/trendy/).
-3) Dryland classes imported from GEE (ADD CROSS REFERENCE TO CODE IN GEE OR Duplicate code here )
+3) Dryland classes imported from Google Earth Engine Repository: https://earthengine.googlesource.com/users/dfawcett/DRIVING_C/+/refs/heads/master
 
 
 R scripts used for final result generation:
