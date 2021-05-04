@@ -1,5 +1,22 @@
 # fawcett_dryland_DGVM_evaluation
 
+This repository contains R code for processing, analysing and visualizing the 
+data presented in 'Assessing the predictions of carbon dynamics in global 
+drylands' by Dominic Fawcett, Andrew Cunliffe, Karen Anderson, Richard Brazier, 
+Tim Hill, Stephen Sitch, Mike O’Sullivan, Jean Pierre Wigneron, and Others.
+
+## The manuscript is In Preparation
+
+## A static version of this repo WILL BE archived on Zenodo
+
+
+INCLUDE DATA REFERENCE
+This code analyses the following datasets:
+1) VOD dataset supplied by Jean Pierre Wigneron (REFERENCE)
+2) Output from the Trendy land surface model intercomparison (v8; https://sites.exeter.ac.uk/trendy/).
+3) Dryland classes imported from GEE (ADD CROSS REFERENCE TO CODE IN GEE OR Duplicate code here )
+
+
 R scripts used for final result generation:
 
 **LVODprocessingASCv2.R:** Filter and aggregated daily netCDF datasets of LVOD, generating annual median and count rasters.
