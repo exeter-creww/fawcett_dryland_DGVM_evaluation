@@ -1,7 +1,8 @@
 
 
-#spatial comparisons of AGC derived from TRENDY ensemble models to VOD derived values, makes scatterplots and calculates statistics
-#using exactextract and weights for regressions and statistics to deal with partial pixel coverage
+#spatial comparisons of AGC derived from TRENDY ensemble models to VOD derived 
+#values, makes scatterplots and calculates statistics #using exactextract and 
+#weights for regressions and statistics to deal with partial pixel coverage
 #contains code to make spatial maps of AGC and GPP (see end)
 #NOTE: weighted CCC currently not implemented
 
