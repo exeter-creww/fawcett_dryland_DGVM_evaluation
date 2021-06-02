@@ -486,7 +486,6 @@ if(abs(cVegdiffmaxval)>abs(cVegdiffminval)){
   cVegdiffextremeval <- abs(cVegdiffmaxval)
 }else{
   cVegdiffextremeval <- abs(cVegdiffminval)
-  
 }
 
 diverge0(levelplot(TRENDYmodelstrendcVegdrylandsdiff,par.settings=my.settings,main=bquote("Model - L-VOD AGC trend " ~ "["~ Mg ~ C ~ ha^{-1}~yr^{-1}~"]"),at=seq(-cVegdiffextremeval, cVegdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+

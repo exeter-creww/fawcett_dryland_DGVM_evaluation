@@ -64,6 +64,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelcVegVODcomp <- modelcVeg[,,((110*12)+1):length(modelcVeg[1,1,])]
   #modelcVeg <- modelcVeg[,,202:319]
   modelcSoil <- ncvar_get(ncincSoil,'cSoil',start=c(1,1,(201*12)+1),count=c(nlonDGVM,nlatDGVM,1416))
+  #modelcSoil <- modelcSoil[,,((201*12)+1):(((201*12)+1)+1415)]
   #modelcSoil <- modelcSoil[,,202:319]
   fillvalue <- ncatt_get(ncingpp,'gpp',"_FillValue")
   
@@ -263,3 +264,62 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
     dfdrylandcSoil <- data.frame(year=yearlistmod,cSoil=totalglobalPgC)
     
     write.table(dfdrylandcSoil,"D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/ISBA-CTRIP_dryland_cSoil_1901_2018.csv",sep=",",row.names = F)
+    
+    
+    #test month to year aggregation
+
+    # totalpercell <- arearaster*modelcSoilbrick*10
+    # totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+    # totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+    # totalglobalextract[,1:1416] <- totalglobalextract[,1:1416]*totalglobalextract$coverage_fraction
+    # 
+    # totalglobal <- colSums(totalglobalextract,na.rm=T)[1:1416]
+    # totalglobalPgC <- totalglobal/(10^9)
+    # 
+    # cSoilDiff <- modelcSoilbrick[[1400]]-modelcSoilbrick[[1]]
+    # 
+    # 
+    # #functions to create diverging plots in levelplot
+    # getMinMax <- function(inraster){
+    #   if(abs(cellStats(inraster,min,na.rm=T))>abs(cellStats(inraster,max,na.rm=T))){
+    #     colbarbounds <- c(cellStats(inraster,min,na.rm=T),abs(cellStats(inraster,min,na.rm=T)))
+    #   }else{
+    #     colbarbounds <- c(-cellStats(inraster,max,na.rm=T),cellStats(inraster,max,na.rm=T))
+    #   }
+    #   return(colbarbounds)
+    # }
+    # 
+    # diverge0 <- function(p, ramp) {
+    #   # p: a trellis object resulting from rasterVis::levelplot
+    #   # ramp: the name of an RColorBrewer palette (as character), a character 
+    #   #       vector of colour names to interpolate, or a colorRampPalette.
+    #   require(RColorBrewer)
+    #   require(rasterVis)
+    #   if(length(ramp)==1 && is.character(ramp) && ramp %in% 
+    #      row.names(brewer.pal.info)) {
+    #     ramp <- suppressWarnings(colorRampPalette(brewer.pal(11, ramp)))
+    #   } else if(length(ramp) > 1 && is.character(ramp) && all(ramp %in% colors())) {
+    #     ramp <- colorRampPalette(ramp)
+    #   } else if(!is.function(ramp)) 
+    #     stop('ramp should be either the name of a RColorBrewer palette, ', 
+    #          'a vector of colours to be interpolated, or a colorRampPalette.')
+    #   rng <- range(p$legend[[1]]$args$key$at)
+    #   s <- seq(-max(abs(rng)), max(abs(rng)), len=1001)
+    #   i <- findInterval(rng[which.min(abs(rng))], s)
+    #   zlim <- switch(which.min(abs(rng)), `1`=i:(1000+1), `2`=1:(i+1))
+    #   p$legend[[1]]$args$key$at <- s[zlim]
+    #   p$par.settings$regions$col <- ramp(1000)[zlim[-length(zlim)]]
+    #   p
+    # } 
+    # 
+    # 
+    # my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")),panel.background=list(col="lightgrey"))
+    # 
+    # #VOD trends
+    # 
+    # trendMinMax <- getMinMax(cSoilDiff)
+    # 
+    # 
+    # diverge0(levelplot(cSoilDiff,par.settings=my.settings,main="ISBA-CTRIP Mg C/ ha 2018 - 1901",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+latticeExtra::layer(sp.polygons(drylandclass,col='black'))
+    # 
+    

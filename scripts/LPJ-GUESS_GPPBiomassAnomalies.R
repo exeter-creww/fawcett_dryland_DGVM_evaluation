@@ -10,7 +10,8 @@ library(raster)
 library(reshape2)
 library(sf)
 library(ncdf4)
- 
+
+setwd('D:/Driving_C/') 
 
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
@@ -229,7 +230,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:118]
    
-   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg
    
    dfdrylandcVeg <- data.frame(year=yearlistmod,cVeg=totalglobalPgC)
    
@@ -246,7 +247,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:118]
    
    
-   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg
    
    dfdrylandcSoil <- data.frame(year=yearlistmod,cSoil=totalglobalPgC)
    

@@ -8,8 +8,11 @@ library(gridExtra)
 library(scales)
 library(raster)
 library(reshape2)
-library(ncdf)
+library(sf)
+library(ncdf4)
   
+
+setwd('D:/Driving_C')
 
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")

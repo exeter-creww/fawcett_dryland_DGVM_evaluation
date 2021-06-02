@@ -8,10 +8,9 @@ library(gridExtra)
 library(scales)
 library(raster)
 library(reshape2)
-library(sf)
-library(ncdf4)
+library(ncdf)
   
-setwd('D:/Driving_C')
+
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
@@ -35,14 +34,11 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 #preprocessing of PMLv2 GPP in GEE
 GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 
-
-#contnrlist <- c(1,6,3,4)#number in continent shapefiles
-
     
-  gppmodelpath <- 'CLASS-CTEM_S2_gpp.nc'
-  cVegmodelpath <- 'CLASS-CTEM_S2_cVeg.nc'
+  gppmodelpath <- 'ISAM_S3_gpp.nc'
+  cVegmodelpath <- 'ISAM_S1_cVeg.nc'
   #lcpath <- 'OCN_S3_oceanCoverFrac.nc'
-  cSoilmodelpath <- 'CLASS-CTEM_S2_cSoil.nc'
+  cSoilmodelpath <- 'ISAM_S1_cSoil.nc'
   #4 dimensional netcdf
   ncingpp <- nc_open(paste0("D:/Driving_C/DGVM/TRENDYmodelsGPP/origGrids/",gppmodelpath))
   ncincVeg <- nc_open(paste0("D:/Driving_C/DGVM/TRENDYmodelscVeg/origGrids/",cVegmodelpath))
@@ -63,8 +59,6 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   #time <- ncvar_get(ncingpp,'time')
   
   modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(303*12)+1),count=c(nlonDGVM,nlatDGVM,192))
-  modelgpptotTS <- ncvar_get(ncingpp,'gpp',start=c(1,1,(201*12)+1),count=c(nlonDGVM,nlatDGVM,1416))
-  
   modelcVeg <- ncvar_get(ncincVeg,'cVeg')#,start=c(1,1,(102*12)+1),count=c(nlonDGVM,nlatDGVM,192))
   modelcVegVODcomp <- modelcVeg[,,312:319]
   modelcVeg <- modelcVeg[,,202:319]
@@ -73,7 +67,6 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   fillvalue <- ncatt_get(ncingpp,'gpp',"_FillValue")
   
   modelgpp[modelgpp==fillvalue$value] <- NA
-  modelgpptotTS[modelgpptotTS==fillvalue$value] <- NA
   modelcVegVODcomp[modelcVegVODcomp==fillvalue$value] <- NA
   modelcVeg[modelcVeg==fillvalue$value] <- NA
   modelcSoil[modelcSoil==fillvalue$value] <- NA
@@ -84,26 +77,30 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   #lcfraster <- t(raster::flip(raster(landcoverfrac),1))
   
   modelgppbrick <- t(raster::flip(brick(modelgpp),1))#no flip  needed for DLEM
-  modelgpptotTSbrick <- t(raster::flip(brick(modelgpptotTS),1))#no flip  needed for DLEM
-  
   modelcVegVODcompbrick <-  t(raster::flip(brick(modelcVegVODcomp),1))
   modelcVegbrick <-  t(raster::flip(brick(modelcVeg),1))
   modelcSoilbrick <-  t(raster::flip(brick(modelcSoil),1))
   
   
-  extent(modelgppbrick) <- c(-180, 180, -90, 90)
+  extent(modelgppbrick) <- c(-179, 180, -90, 90)
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
   
-  extent(modelgpptotTSbrick) <- c(-180, 180, -90, 90)
-  projection(modelgpptotTSbrick) <- CRS("+init=epsg:4326")
+  #ISAM_S1 cVeg different from gpp and cSoil (???) needs to be shifted
+  extent(modelcVegVODcompbrick) <- c(0, 360, -90, 90)
+  projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
+  modelcVegVODcompbrick <- rotate(modelcVegVODcompbrick)
   
-  extent(modelcVegVODcompbrick) <- c(-180, 180, -90, 90)
+  extent(modelcVegbrick) <- c(0, 360, -90, 90)
+  projection(modelcVegbrick) <- CRS("+init=epsg:4326")
+  modelcVegbrick <- rotate(modelcVegbrick)
+  
+  extent(modelcVegVODcompbrick) <- c(-179, 180, -90, 90)
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
   
-  extent(modelcVegbrick) <- c(-180, 180, -90, 90)
+  extent(modelcVegbrick) <- c(-179, 180, -90, 90)
   projection(modelcVegbrick) <- CRS("+init=epsg:4326")
   
-  extent(modelcSoilbrick) <- c(-180, 180, -90, 90)
+  extent(modelcSoilbrick) <- c(-179, 180, -90, 90)
   projection(modelcSoilbrick) <- CRS("+init=epsg:4326")
   
  # extent(lcfraster) <- c(-180, 180, -90, 90)
@@ -119,39 +116,22 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelannualgpp <- stackApply(modelgppbrick,monthyearindex,fun=mean)
   modelannualgpp <- modelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
   
-  monthyearindex <- rep(1:118,each=12)
-  
-  modelannualgpptotTS <- stackApply(modelgpptotTSbrick,monthyearindex,fun=mean)
-  modelannualgpptotTS <- modelannualgpptotTS*31556952 #from mean kg/m2/s to kg/m2/year
-  
   modelannualcVegVODcomp <- modelcVegVODcompbrick*10
   modelannualcVeg <- modelcVegbrick
   modelannualcSoil <- modelcSoilbrick
 
   
-  #resample dryland classes to 1 deg (modal aggregation then neares neighbour resampling)
-  #drylandclassag <- aggregate(drylandclass,fact=10,fun=modal)
-  #drylandclassresamp <- resample(drylandclassag,modelannualgpp[[1]],method='ngb')
-  #drylandclassresamp <- drylandclassresamp*longmask
-
-  #drylandmask <- drylandclassresamp>0
-  #drylandmask[drylandmask==0] <- NA
-  
-  #regiondrylandmask <- mask(drylandmask,continentshapes[contnrlist,])
-  
   GPPstacksresamp <- raster::resample(GPPstack,modelannualgpp[[1]])
   GPPfinbrick <- GPPstacksresamp/100
   PMLdatamask <- !is.na(sum(GPPfinbrick)) #only use pixels with data valid GPP data for all years
   PMLdatamask[PMLdatamask ==0] <- NA
-  
-  
-   modelannualgppmasked <- mask(modelannualgpp ,PMLdatamask)*10
-   modelannualgpptotTSmasked <- mask(modelannualgpptotTS ,PMLdatamask)*10
-   
+
+   modelannualgppmasked <- modelannualgpp*10 #removed PML data mask due to differing extents
    modelannualcVegmasked <- modelannualcVeg*10
    modelannualcSoilmasked <- modelannualcSoil*10
+
    
-   arearaster <- area(modelannualgppmasked[[1]])*100#*lcfraster
+   arearaster <- area(modelannualgpp[[1]])*100#*lcfraster
    
    
    #GPP calc
@@ -170,7 +150,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_S2_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISAM_S1_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
    
    #GPP calc cells touching
    
@@ -184,7 +164,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_S2_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISAM_S1_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
    
    
    #GPP calc only cells contained
@@ -201,7 +181,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_S2_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISAM_S1_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
    
    
    #cVeg VOD comp calc
@@ -221,7 +201,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLASS-CTEM_S2_dryland_cVeg_2011_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/ISAM_S1_dryland_cVeg_2011_2018.csv",sep=",",row.names = F)
    
    #cVeg VOD comp calc all cells touched
    
@@ -235,7 +215,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLASS-CTEM_S2_dryland_cVeg_2011_2018_extended.csv",sep=",",row.names = F)
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/ISAM_S1_dryland_cVeg_2011_2018_extended.csv",sep=",",row.names = F)
    
    
    #cVeg VOD comp calc only cells with centre within
@@ -251,25 +231,9 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLASS-CTEM_S2_dryland_cVeg_2011_2018_contained.csv",sep=",",row.names = F)
-   
-   #GPP global 1901 calc
-   totalpercell <- arearaster*modelannualgpptotTSmasked 
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/ISAM_S1_dryland_cVeg_2011_2018_contained.csv",sep=",",row.names = F)
    
    
-   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
-   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
-   
-   totalglobalextract[,1:118] <- totalglobalextract[,1:118]*totalglobalextract$coverage_fraction
-   
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:118]
-   
-   
-   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
-   
-   dfdrylandGPP <- data.frame(year=yearlistmod,GPP=totalglobalPgC)
-   
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_S2_dryland_GPP_1901_2018.csv",sep=",",row.names = F)
    
    #cVeg global 1901 calc
    totalpercell <- arearaster*modelannualcVegmasked 
@@ -285,9 +249,11 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistmod,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLASS-CTEM_S2_dryland_cVeg_1901_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/ISAM_S1_dryland_cVeg_1901_2018.csv",sep=",",row.names = F)
    
    #cSoil global 1901 calc
+   arearaster <- area(modelannualcSoil[[1]])*100
+   
    totalpercell <- arearaster*modelannualcSoilmasked 
    
    totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
@@ -302,5 +268,6 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcSoil <- data.frame(year=yearlistmod,cSoil=totalglobalPgC)
    
-   write.table(dfdrylandcSoil,"D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/CLASS-CTEM_S2_dryland_cSoil_1901_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandcSoil,"D:/Driving_C/DGVM/DGVMdrylandTS/cSoil/ISAM_S1_dryland_cSoil_1901_2018.csv",sep=",",row.names = F)
    
+    

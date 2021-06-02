@@ -437,16 +437,16 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   cVegAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_1901_2018.csv"))
   
-  cVegAllModels[,2:13] <-  cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13])
+  cVegAllModels[,2:12] <-  cVegAllModels[,2:12]-as.list(cVegAllModels[1,2:12])
   
   melted <- melt(cVegAllModels,id.vars='year')
   
-  colpalette <- hue_pal()(12)
+  colpalette <- hue_pal()(11)
   colpalette <- c(colpalette,"#909090")
   
-  ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+  ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
   
-  lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+  lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 
   
 p1 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) + 
@@ -454,7 +454,7 @@ p1 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
    scale_colour_manual(values = colpalette)+
    scale_size_manual(values = lwdtest)+
    scale_linetype_manual(values = ltytest)+
-   ylim(c(-55,55))+
+   ylim(c(-20,20))+
     #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
     #geom_line(aes(x = years,y=JULES),colour="orange")+
     theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -469,18 +469,18 @@ p1 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
 
 cSoilAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylands_1901_2018.csv"))
 
-cSoilAllModels[,2:13] <-  cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13])
+cSoilAllModels[,2:12] <-  cSoilAllModels[,2:12]-as.list(cSoilAllModels[1,2:12])
 
 
 #dfallyears <- cbind(dfallyears,TRENDY=TRENDYmean)
 melted <- melt(cSoilAllModels,id.vars='year')
 
-colpalette <- hue_pal()(12)
+colpalette <- hue_pal()(11)
 colpalette <- c(colpalette,"#909090")
 
-ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
 
-lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 
 #melted <- melt(dfallyears,id.vars='years')
 p2 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) + 
@@ -488,7 +488,7 @@ p2 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-55,55))+
+  ylim(c(-20,20))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -507,19 +507,19 @@ cSoilAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylands
 
 cTotalAllModels <- cSoilAllModels+cVegAllModels
 
-cTotalAllModels[,2:13] <-  cTotalAllModels[,2:13]-as.list(cTotalAllModels[1,2:13])
+cTotalAllModels[,2:12] <-  cTotalAllModels[,2:12]-as.list(cTotalAllModels[1,2:12])
 
 cTotalAllModels[,1] <- cSoilAllModels[,1]
 
 #dfallyears <- cbind(dfallyears,TRENDY=TRENDYmean)
 melted <- melt(cTotalAllModels,id.vars='year')
 
-colpalette <- hue_pal()(12)
+colpalette <- hue_pal()(11)
 colpalette <- c(colpalette,"#909090")
 
-ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
 
-lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 #dfallyears[,12] <- NA
 
 #melted <- melt(dfallyears,id.vars='years')
@@ -528,7 +528,7 @@ p3 <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-55,55))+
+  ylim(c(-20,20))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -545,27 +545,27 @@ grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
 #interquartile range
 
 
-cSoilAllModels[,2:13] <-  cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13])
-cVegAllModels[,2:13] <-  cVegAllModels[,2:13]-as.list(cVegAllModels[1,2:13])
+cSoilAllModels[,2:12] <-  cSoilAllModels[,2:12]-as.list(cSoilAllModels[1,2:12])
+cVegAllModels[,2:12] <-  cVegAllModels[,2:12]-as.list(cVegAllModels[1,2:12])
 
-cTotalAllModelsMean <- apply(cTotalAllModels[,2:13],1,mean,na.rm=T)
-cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cTotalAllModelsMean <- apply(cTotalAllModels[,2:12],1,mean,na.rm=T)
+cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
 
-cSoilAllModelsMean <- apply(cSoilAllModels[,2:13],1,mean,na.rm=T)
-cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cSoilAllModelsMean <- apply(cSoilAllModels[,2:12],1,mean,na.rm=T)
+cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
 
-cVegAllModelsMean <- apply(cVegAllModels[,2:13],1,mean,na.rm=T)
-cVegAllModels_Quartlower<- apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsMean <- apply(cVegAllModels[,2:12],1,mean,na.rm=T)
+cVegAllModels_Quartlower<- apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
 
 cVegAllModelsribbonplotdf <- data.frame(years=cVegAllModels$year,TRENDYmean=cVegAllModelsMean,TRENDY_Quartlower=cVegAllModels_Quartlower,TRENDY_Quartupper=cVegAllModels_Quartupper)
 p1 <- ggplot(cVegAllModelsribbonplotdf, aes(x = years)) + 
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-55,55))+
+  ylim(c(-20,20))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]")) +
   labs(title=bquote('d)'))+
@@ -580,7 +580,7 @@ p2 <- ggplot(cSoilAllModelsribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-55,55))+
+  ylim(c(-20,20))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]")) +
   labs(title=bquote('e)'))+
@@ -595,7 +595,7 @@ p3 <- ggplot(cTotalAllModelsribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-55,55))+
+  ylim(c(-20,20))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cTotal " ~ "["~ Pg ~ C ~ "]")) +
   labs(title=bquote('f)'))+
@@ -610,11 +610,11 @@ grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
 
 #model comparison
 
-cVegdf <- data.frame(cVegAllModels[,2:13])
+cVegdf <- data.frame(cVegAllModels[,2:12])
 
-cSoildf <- data.frame(cSoilAllModels[,2:13])
+cSoildf <- data.frame(cSoilAllModels[,2:12])
 
-cTotaldf <- data.frame(cTotalAllModels[,2:13])
+cTotaldf <- data.frame(cTotalAllModels[,2:12])
 
 deltacVegdf <- cVegdf[118,]-cVegdf[1,]
 deltacSoildf <- cSoildf[118,]-cSoildf[1,]
@@ -623,13 +623,13 @@ deltaTotaldf <- cTotaldf[118,]-cTotaldf[1,]
 
 colPal <- colorRampPalette(c("red", "grey", "blue"))
 
-legend_entry <- paste("  ", seq(1,12,1), names(deltacVegdf))
+legend_entry <- paste("  ", seq(1,11,1), names(deltacVegdf))
 
 
-deltacdf <- data.frame(deltacVeg=unlist(deltacVegdf),deltacSoil=unlist(deltacSoildf),legend_entry,names=names(deltacVegdf),deltaTotaldf=unlist(deltaTotaldf),modelnr=seq(1,12,1))
+deltacdf <- data.frame(deltacVeg=unlist(deltacVegdf),deltacSoil=unlist(deltacSoildf),legend_entry,names=names(deltacVegdf),deltaTotaldf=unlist(deltaTotaldf),modelnr=seq(1,11,1))
 
 ymin <- min(deltacdf$deltacSoil)
-ymax <- 55#max(deltacdf$deltacSoil)
+ymax <- 20#max(deltacdf$deltacSoil)
 
 y_values_legend <- ymax-(ymax-ymin)*(1:nrow(deltacdf))/nrow(deltacdf)
 
@@ -638,8 +638,8 @@ p1 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
   geom_vline(aes(xintercept=0),lty=2,col='grey')+
   geom_point(aes(colour = deltaTotaldf))+
   theme_bw()+
-  xlim(c(-55,55))+
-  ylim(c(-55,55))+
+  xlim(c(-20,20))+
+  ylim(c(-20,20))+
   scale_colour_gradient2(low='red',mid='grey',high='blue')+
   #(colours = terrain.colors(10))+
   geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
@@ -657,8 +657,8 @@ p2 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
   geom_vline(aes(xintercept=0),lty=2,col='grey')+
   geom_point(aes(colour = deltaTotaldf))+
   theme_bw()+
-  xlim(c(-55,55))+
-  ylim(c(-55,55))+
+  xlim(c(-20,20))+
+  ylim(c(-20,20))+
   scale_colour_gradient2(low='red',mid='grey',high='blue')+
   #(colours = terrain.colors(10))+
   geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
