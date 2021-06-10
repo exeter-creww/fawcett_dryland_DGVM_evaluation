@@ -38,7 +38,7 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
 
     
-  gppmodelpath <- 'CLM5.0_S3_gpp.nc'
+  gppmodelpath <- 'CLM5.0_S1_gpp.nc'
   cVegmodelpath <- 'CLM5.0_S1_cVeg.nc'
   #lcpath <- 'OCN_S3_oceanCoverFrac.nc'
   cSoilmodelpath <- 'CLM5.0_S1_cSoil.nc'

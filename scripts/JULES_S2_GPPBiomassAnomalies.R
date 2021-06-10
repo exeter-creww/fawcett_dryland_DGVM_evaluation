@@ -11,7 +11,7 @@ library(reshape2)
 library(sf)
 library(ncdf4)
  
-
+setwd('D:/Driving_C')
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
@@ -36,7 +36,7 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 
     
-  gppmodelpath <- 'JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S3_Annual_gpp.nc'
+  gppmodelpath <- 'JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S2_Annual_gpp.nc'
   cVegmodelpath <- 'JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S2_Annual_cVeg.nc'
   cSoilmodelpath <- 'JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S2_Annual_cSoil.nc'
   lcpath <- 'JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.landAreaFrac.nc'

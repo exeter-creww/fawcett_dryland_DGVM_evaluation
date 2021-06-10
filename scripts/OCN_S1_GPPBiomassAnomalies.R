@@ -11,7 +11,9 @@ library(reshape2)
 library(sf)
 library(ncdf4)
  
+#NOTE: S1 GPP is not available
 
+setwd('D:/Driving_C')
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
@@ -40,7 +42,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 #contnrlist <- c(1,6,3,4)#number in continent shapefiles
 
     
-  gppmodelpath <- 'OCN_S3_gpp.nc'
+  gppmodelpath <- 'OCN_S1_gpp.nc'
   cVegmodelpath <- 'OCN_S1_cVeg.nc'
   lcpath <- 'OCN_S3_oceanCoverFrac.nc'
   cSoilmodelpath <- 'OCN_S1_cSoil.nc'

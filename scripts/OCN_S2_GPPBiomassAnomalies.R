@@ -11,7 +11,7 @@ library(reshape2)
 library(sf)
 library(ncdf4)
  
-
+setwd('D:/Driving_C')
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")

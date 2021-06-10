@@ -10,7 +10,7 @@ library(raster)
 library(reshape2)
 library(ncdf4)
  
-
+setwd('D:/Driving_C')
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
@@ -39,7 +39,7 @@ VODstack <- VODannualstacktot[[2:9]]
 
 #contnrlist <- c(1,6,3,4)#number in continent shapefiles
 
-  gppmodelpath <- 'LPJ-GUESS_S3_gpp.nc'
+  gppmodelpath <- 'LPJ-GUESS_S1_gpp.nc'
   cVegmodelpath <- 'LPJ-GUESS_S1_cVeg.nc'
   #lcpath <- 'OCN_S1_oceanCoverFrac.nc'
   cSoilmodelpath <- 'LPJ-GUESS_S1_cSoil.nc'
@@ -165,7 +165,7 @@ VODstack <- VODannualstacktot[[2:9]]
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_S1_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
    
    #GPP calc only cells contained
    totalpercell <- arearaster*modelannualgppmasked 
@@ -182,7 +182,7 @@ VODstack <- VODannualstacktot[[2:9]]
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_S1_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
    
    #GPP calc only cells contained
    totalpercell <- arearaster*modelannualgppmasked 
@@ -199,7 +199,7 @@ VODstack <- VODannualstacktot[[2:9]]
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/LPJ-GUESS_S1_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
    
    #cVeg VOD comp calc
    arearaster <- area(modelannualcVegVODcomp[[1]])*100#*lcfraster

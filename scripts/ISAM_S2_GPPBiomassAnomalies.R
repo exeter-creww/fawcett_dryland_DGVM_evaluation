@@ -10,7 +10,7 @@ library(raster)
 library(reshape2)
 library(ncdf)
   
-
+setwd('D:/Driving_C')
 #continent outlines for plotting and region subsetting
 continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
@@ -35,7 +35,7 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 
     
-  gppmodelpath <- 'ISAM_S3_gpp.nc'
+  gppmodelpath <- 'ISAM_S2_gpp.nc'
   cVegmodelpath <- 'ISAM_S2_cVeg.nc'
   #lcpath <- 'OCN_S3_oceanCoverFrac.nc'
   cSoilmodelpath <- 'ISAM_S2_cSoil.nc'
