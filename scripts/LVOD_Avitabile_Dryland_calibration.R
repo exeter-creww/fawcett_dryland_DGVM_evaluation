@@ -73,4 +73,5 @@ p <- ggplot(df) +
 
 print(p)
 
+summary(linmodzerointerc)
 

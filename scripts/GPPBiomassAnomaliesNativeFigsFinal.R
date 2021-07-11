@@ -135,16 +135,10 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   plot(GPPplot)
 
   
-  #subtract mean of first year
-  dfvar <- df
+  dfvar <- cbind(MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
   
-  #interquartile range
-  TRENDY_Quartlower<- apply(dfvar[,3:14],1,FUN=function(x){quantile(x,0.25)})
-  TRENDY_Quartupper <-  apply(dfvar[,3:14],1,FUN=function(x){quantile(x,0.75)}) 
-  
-
   #normalize to mean of time series
-  dfvar[,-3] <-  df[,-3]-as.list(colMeans(df[,-3]))
+  dfvar[,-2] <-  dfvar[,-2]-as.list(colMeans(dfvar[,-2]))
   #dfvar <- dfvar[,-1]
   
 #GPP plot minus mean (variance), detrended
@@ -161,19 +155,19 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   sigtrendsmask <- TStrendpval<0.05
   sigtrendsmask[] <- T #decided to detrend all instead
-  sigtrendsmask[3] <- F #without year vec
+  sigtrendsmask[2] <- F #without year vec
   
   #detrend all time series (previously: with significant trends)
   dfvardetrend <- dfvar
-  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=14, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   melted <- melt(dfvardetrend,id.vars='year')
   
   colpalette <- hue_pal()(12)
-  colpalette <- c("#909090","#000000",colpalette)
+  colpalette <- c("#000000",colpalette)
   
-  lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
-  ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
+  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
+  ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
   
   
   GPPplotvariance <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
@@ -190,12 +184,48 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
     
   
   
-#GPP ribbon plot variant
   
-  dfribbon <- df
- # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3])) #decided against sho
+  #GPP ribbon plot variant
   
-  GPPribbonplotdf <- data.frame(years=dfribbon$year,TRENDYmean=dfribbon$TRENDY,MODIS=dfribbon$MODIS,TRENDY_Quartlower,TRENDY_Quartupper)
+  # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
+  
+  
+  dfribbon <-  cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)#cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  
+  #normalize to mean of time series
+  dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
+  #dfvar <- dfvar[,-1]
+  
+  #GPP plot minus mean (variance), detrended
+  
+  fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
+  
+  
+  TStrendslope <- apply(dfribbon,2,fun1)
+  TStrendpval <- apply(dfribbon,2,fun2)
+  
+  #calculation of TS intercept varies, this method using medians is taken from https://pubs.usgs.gov/tm/2006/tm4a7/pdf/USGSTM4A7.pdf
+  TStrendintercept <- apply(dfribbon,2,median)-TStrendslope*median(seq(1:16))
+  
+  sigtrendsmask <- TStrendpval<0.05
+  sigtrendsmask[] <- T #decided to detrend all instead
+  sigtrendsmask[3] <- F #without year vec
+  
+  #detrend time series with significant trends
+  
+  #detrend time series (previously: only with significant trends)
+  dfribbondetrend <- dfribbon
+  dfribbondetrend[,sigtrendsmask] <- dfribbondetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  
+  
+  #interquartile range
+  TRENDY_Quartlower<- apply(dfribbondetrend[,4:15],1,FUN=function(x){quantile(x,0.25)})
+  TRENDY_Quartupper <-  apply(dfribbondetrend[,4:15],1,FUN=function(x){quantile(x,0.75)}) 
+  
+  dfribbondetrend$TRENDY <-  apply(dfribbondetrend[,4:15],1,mean)
+  
+  GPPribbonplotdf <- data.frame(years=dfribbon$year,TRENDYmean=dfribbondetrend$TRENDY,MODIS=dfribbondetrend$MODIS,TRENDY_Quartlower,TRENDY_Quartupper)
   GPPplotribbon <- ggplot(GPPribbonplotdf, aes(x = years)) + #vegetation crown plot
     theme_classic() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -225,11 +255,11 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
   
   #mean of MAE between model and 
-  modelVarianceGPP <- colMeans(abs(dfvardetrend[,c(-2,-3)]-dfvardetrend$MODIS)) 
+  modelVarianceGPP <- colMeans(abs(dfribbondetrend[,c(-2,-3)]-dfribbondetrend$MODIS)) 
   
   GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP,modelmeans=colMeans(dfstats[1:13]),PMLmean=mean(drylandGPPPML$GPP))
    
-  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018.csv",sep=',',row.names=F)
+  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018_fin.csv",sep=',',row.names=F)
   
   #calculate sen's slope and pvalue for each series
   
@@ -319,17 +349,11 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #plot VOD and modelled carbon 2011-2018
   plot(Cplot)
   
-  #subtract mean of first year
-  dfvar <- df
-  
-  #interquartile range
-  TRENDY_Quartlower<- apply(dfvar[,3:14],1,FUN=function(x){quantile(x,0.25)})
-  TRENDY_Quartupper <-  apply(dfvar[,3:14],1,FUN=function(x){quantile(x,0.75)}) 
-  
-  
+
+  dfvar <-  cbind(LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   #normalize to mean of time series
-  dfvar[,-3] <-  df[,-3]-as.list(colMeans(df[,-3]))
+  dfvar[,-2] <-  dfvar[,-2]-as.list(colMeans(dfvar[,-2]))
   #dfvar <- dfvar[,-1]
   
   #GPP plot minus mean (variance), detrended
@@ -346,27 +370,27 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   sigtrendsmask <- TStrendpval<0.05
   sigtrendsmask[] <- T #decided to detrend all instead
-  sigtrendsmask[3] <- F #without year vec
+  sigtrendsmask[2] <- F #without year vec
   
   #detrend time series with significant trends
 
   #detrend time series (previously: only with significant trends)
   dfvardetrend <- dfvar
-  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:8), nrow=8, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:8), nrow=8, ncol=14, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   
   melted <- melt(dfvardetrend,id.vars='year')
   
   #GPP plot minus mean (variance)
   colpalette <- hue_pal()(12)
-  colpalette <- c("#909090","#000000",colpalette)
+  colpalette <- c("#000000",colpalette)
   
-  lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
-  ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
+  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
+  ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
   
   Cplotvariance <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
     
-    geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+    geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
     scale_colour_manual(values = colpalette)+
     scale_size_manual(values = lwdtest)+
     scale_linetype_manual(values = ltytest)+
@@ -386,8 +410,42 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
  # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
   
   
+  dfribbon <-  cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
-  Cribbonplotdf <- data.frame(years=dfribbon$year,TRENDYmean=dfribbon$TRENDY,LVOD=dfribbon$LVOD,TRENDY_Quartlower,TRENDY_Quartupper)
+  #normalize to mean of time series
+  dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
+  #dfvar <- dfvar[,-1]
+  
+  #GPP plot minus mean (variance), detrended
+  
+  fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
+  fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
+  
+  
+  TStrendslope <- apply(dfribbon,2,fun1)
+  TStrendpval <- apply(dfribbon,2,fun2)
+  
+  #calculation of TS intercept varies, this method using medians is taken from https://pubs.usgs.gov/tm/2006/tm4a7/pdf/USGSTM4A7.pdf
+  TStrendintercept <- apply(dfribbon,2,median)-TStrendslope*median(seq(1:8))
+  
+  sigtrendsmask <- TStrendpval<0.05
+  sigtrendsmask[] <- T #decided to detrend all instead
+  sigtrendsmask[3] <- F #without year vec
+  
+  #detrend time series with significant trends
+  
+  #detrend time series (previously: only with significant trends)
+  dfribbondetrend <- dfribbon
+  dfribbondetrend[,sigtrendsmask] <- dfribbondetrend[,sigtrendsmask]-t(t(matrix(seq(1:8), nrow=8, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  
+  
+  #interquartile range
+  TRENDY_Quartlower<- apply(dfribbondetrend[,4:15],1,FUN=function(x){quantile(x,0.25)})
+  TRENDY_Quartupper <-  apply(dfribbondetrend[,4:15],1,FUN=function(x){quantile(x,0.75)}) 
+  
+  #dfribbon$TRENDY <-  apply(dfribbondetrend[,4:15],1,mean)
+  
+  Cribbonplotdf <- data.frame(years=dfribbon$year,TRENDYmean=dfribbondetrend$TRENDY,LVOD=dfribbondetrend$LVOD,TRENDY_Quartlower,TRENDY_Quartupper)
   Cplotribbon <- ggplot(Cribbonplotdf, aes(x = years)) + #vegetation crown plot
     theme_classic() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -418,11 +476,11 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #modelVarianceAGC <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
   
   #sensitivity calculation using detrended time series
-  modelVarianceAGC <- colMeans(abs(dfvardetrend[,c(-2,-3)]-dfvardetrend$LVOD)) 
+  modelVarianceAGC <- colMeans(abs(dfribbondetrend[,c(-2,-3)]-dfribbondetrend$LVOD)) 
   
   AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC,modelmeans=colMeans(dfstats[1:13]),LVODmean=mean(drylandcVegVOD$LVOD))
   
-  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018.csv",sep=',',row.names=F)
+  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelscVegstats_2011_2018_fin.csv",sep=',',row.names=F)
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}

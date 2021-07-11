@@ -13,10 +13,12 @@ library(ggplot2)
 library(gridExtra)
 library(scales)
 library(rgeos)
+library(deming)
 library(reshape2)
 library(ncdf4)
 library(raster)
 library(grid)
+library(zyp)
 
 setwd('D:/Driving_C') 
 
@@ -65,61 +67,86 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
 TRENDYGPPbrick <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to Mg C per ha
 
 #########
-#model time series of GPP since 2003 for SI
+#model time series of GPP since 1901 for SI
 
 #GPP all models (NOTE: S1 for OCN not available)
 
 
 
-GPPAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
-GPPAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_S2_drylands_2003_2018.csv"))
-GPPAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_S1_drylands_2003_2018.csv"))
+GPPAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_1901_2018.csv"))
+GPPAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_S2_drylands_1901_2018.csv"))
+GPPAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_S1_drylands_1901_2018.csv"))
 
-GPPAllModelsS3[,2:13] <-  GPPAllModelsS3[,2:13]-as.list(GPPAllModelsS3[1,2:13])
-GPPAllModelsS2[,2:13] <-  GPPAllModelsS2[,2:13]-as.list(GPPAllModelsS2[1,2:13])
-GPPAllModelsS1[,2:13] <-  GPPAllModelsS1[,2:13]-as.list(GPPAllModelsS1[1,2:13])
+#remove OCN from all
+GPPAllModelsS1 <- GPPAllModelsS1[,-11]
+GPPAllModelsS1trend <- GPPAllModelsS1
+GPPAllModelsS2 <- GPPAllModelsS2[,-11]
+GPPAllModelsS3 <- GPPAllModelsS3[,-11]
+
+
+# for(i in 1:11){
+# GPPcurrentModelS1vals <- GPPAllModelsS1[,i+1]
+# xvec <- 1:16
+# 
+# senout <- zyp.sen(GPPcurrentModelS1vals~xvec)
+# GPPAllModelsS1trend[,i+1] <- senout$coefficients[1]+senout$coefficients[2]*xvec
+# 
+# }
+
+
+GPPAllModelsS3minusS2 <- GPPAllModelsS3
+GPPAllModelsS3minusS2[,2:12] <- GPPAllModelsS3[,2:12]-GPPAllModelsS2[,2:12]
+
+GPPAllModelsS2minusS1 <- GPPAllModelsS3
+GPPAllModelsS2minusS1[,2:12] <- GPPAllModelsS2[,2:12]-GPPAllModelsS1[,2:12]
+
+
+
+GPPAllModelsS3minusS2[,2:12] <-  GPPAllModelsS3minusS2[,2:12]-as.list(GPPAllModelsS3minusS2[1,2:12])
+GPPAllModelsS2minusS1[,2:12] <-  GPPAllModelsS2minusS1[,2:12]-as.list(GPPAllModelsS2minusS1[1,2:12])
+GPPAllModelsS3[,2:12] <-  GPPAllModelsS3[,2:12]-as.list(GPPAllModelsS3[1,2:12])
+GPPAllModelsS2[,2:12] <-  GPPAllModelsS2[,2:12]-as.list(GPPAllModelsS2[1,2:12])
+GPPAllModelsS1[,2:12] <-  GPPAllModelsS1[,2:12]-as.list(GPPAllModelsS1[1,2:12])
+
+
 
 meltedS3 <- melt(GPPAllModelsS3,id.vars='year')
 
-meltedS2 <- melt(GPPAllModelsS2,id.vars='year')
+meltedS3minusS2 <- melt(GPPAllModelsS3minusS2,id.vars='year')
+
+meltedS2minusS1 <- melt(GPPAllModelsS2minusS1,id.vars='year')
 
 meltedS1 <- melt(GPPAllModelsS1,id.vars='year')
 
-meltedS2minusS1<- meltedS2
-meltedS2minusS1$value <- meltedS2$value-meltedS1$value
 
-meltedS3minusS2<- meltedS3
-meltedS3minusS2$value <- meltedS3$value-meltedS2$value
-
-
-colpalette <- hue_pal()(12)
+colpalette <- hue_pal()(11)
 colpalette <- c(colpalette,"#909090")
 
-ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
 
-lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 
 
 p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) + 
-  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   geom_hline(aes(yintercept=0),lty=2)+
   #plot.margin=margin(1,1,1,1,'cm')
-  labs(y=bquote(Delta ~" GPP S1" ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title=bquote('a)' ~ CO[2] ~'change'))
+  labs(y=bquote(Delta ~" GPP S1" ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]',title=bquote('a)' ~ CO[2] ~'change'))
 
 p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) + 
-  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -129,11 +156,11 @@ p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) +
   labs(y=bquote(Delta ~" GPP S2 - S1" ~ "["~ Pg ~ C ~ yr^{-1}~  "]"),x='Time [yr]',title='b) climate change')
 
 p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) + 
-  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -144,11 +171,11 @@ p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) +
 
 
 p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) + 
-  geom_line(aes(colour=variable,lwd=variable,lty=variable))+
+  geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -162,26 +189,27 @@ grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
 
 #interquartile range
 
-GPPAllModelsS3minusS2 <- GPPAllModelsS3
-GPPAllModelsS3minusS2[,2:13] <- GPPAllModelsS3[,2:13]-GPPAllModelsS2[,2:13]
+# GPPAllModelsS3minusS2 <- GPPAllModelsS3
+# GPPAllModelsS3minusS2[,2:12] <- GPPAllModelsS3[,2:12]-GPPAllModelsS2[,2:12]
+# 
+# GPPAllModelsS2minusS1 <- GPPAllModelsS3
+# GPPAllModelsS2minusS1[,2:12] <- GPPAllModelsS2[,2:12]-GPPAllModelsS1[,2:12]
 
-GPPAllModelsS2minusS1 <- GPPAllModelsS3
-GPPAllModelsS2minusS1[,2:13] <- GPPAllModelsS2[,2:13]-GPPAllModelsS1[,2:13]
+GPPAllModelsS1mean <- apply(GPPAllModelsS1[,2:12],1,mean,na.rm=T)
+GPPAllModelsS3mean <- apply(GPPAllModelsS3[,2:12],1,mean,na.rm=T)
 
-GPPAllModelsS1mean <- apply(GPPAllModelsS1[,2:13],1,mean,na.rm=T)
-GPPAllModelsS3mean <- apply(GPPAllModelsS3[,2:13],1,mean,na.rm=T)
 
-GPPAllModelsS2minusS1mean <- apply(GPPAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
-GPPAllModelsS3minusS2mean <- apply(GPPAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+GPPAllModelsS2minusS1mean <- apply(GPPAllModelsS2minusS1[,2:12],1,mean,na.rm=T)
+GPPAllModelsS3minusS2mean <- apply(GPPAllModelsS3minusS2[,2:12],1,mean,na.rm=T)
 
-GPPAllModelsS1_Quartlower<- apply(GPPAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-GPPAllModelsS1_Quartupper <-  apply(GPPAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-GPPAllModelsS3_Quartlower<- apply(GPPAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-GPPAllModelsS3_Quartupper <-  apply(GPPAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-GPPAllModelsS2minusS1_Quartlower<- apply(GPPAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-GPPAllModelsS2minusS1_Quartupper <-  apply(GPPAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-GPPAllModelsS3minusS2_Quartlower<- apply(GPPAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-GPPAllModelsS3minusS2_Quartupper <-  apply(GPPAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+GPPAllModelsS1_Quartlower<- apply(GPPAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+GPPAllModelsS1_Quartupper <-  apply(GPPAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+GPPAllModelsS3_Quartlower<- apply(GPPAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+GPPAllModelsS3_Quartupper <-  apply(GPPAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+GPPAllModelsS2minusS1_Quartlower<- apply(GPPAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+GPPAllModelsS2minusS1_Quartupper <-  apply(GPPAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+GPPAllModelsS3minusS2_Quartlower<- apply(GPPAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+GPPAllModelsS3minusS2_Quartupper <-  apply(GPPAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
 
 #GPP ribbon plots
 
@@ -190,7 +218,7 @@ p1 <- ggplot(GPPS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" GPP S1" ~ "["~ Pg ~ C ~ yr^{-1}~ "]")) +
   labs(title=bquote('e)' ~ CO[2] ~'change'))+
@@ -205,7 +233,7 @@ p2 <- ggplot(GPPS2minusS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" GPP S2 - S1" ~ "["~ Pg ~ C ~ yr^{-1}~ "]")) +
   labs(title='f) climate change')+
@@ -220,7 +248,7 @@ p3 <- ggplot(GPPS3minusS2ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" GPP S3 - S2" ~ "["~ Pg ~ C ~ yr^{-1}~ "]")) +
   labs(title='g) land-use change')+
@@ -235,7 +263,7 @@ p4 <- ggplot(GPPS3ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-5,5))+
+  ylim(c(-8,8))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" GPP S3" ~ "["~ Pg ~ C ~ yr^{-1}~  "]")) +
   labs(title='h) net change')+
@@ -257,9 +285,21 @@ grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
   cVegAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_S2_drylands_1901_2018.csv"))
   cVegAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_S1_drylands_1901_2018.csv"))
   
-  cVegAllModelsS3[,2:13] <-  cVegAllModelsS3[,2:13]-as.list(cVegAllModelsS3[1,2:13])
-  cVegAllModelsS2[,2:13] <-  cVegAllModelsS2[,2:13]-as.list(cVegAllModelsS2[1,2:13])
-  cVegAllModelsS1[,2:13] <-  cVegAllModelsS1[,2:13]-as.list(cVegAllModelsS1[1,2:13])
+  cVegAllModelsS3minusS2 <- cVegAllModelsS3
+  cVegAllModelsS3minusS2[,2:12] <- cVegAllModelsS3[,2:12]-cVegAllModelsS2[,2:12]
+  
+  cVegAllModelsS2minusS1 <- cVegAllModelsS3
+  cVegAllModelsS2minusS1[,2:12] <- cVegAllModelsS2[,2:12]-cVegAllModelsS1[,2:12]
+  
+  cVegAllModelsS3minusS2[,2:12] <-  cVegAllModelsS3minusS2[,2:12]-as.list(cVegAllModelsS3minusS2[1,2:12])
+  cVegAllModelsS2minusS1[,2:12] <-  cVegAllModelsS2minusS1[,2:12]-as.list(cVegAllModelsS2minusS1[1,2:12])
+  
+  
+  cVegAllModelsS3[,2:12] <-  cVegAllModelsS3[,2:12]-as.list(cVegAllModelsS3[1,2:12])
+  cVegAllModelsS2[,2:12] <-  cVegAllModelsS2[,2:12]-as.list(cVegAllModelsS2[1,2:12])
+  cVegAllModelsS1[,2:12] <-  cVegAllModelsS1[,2:12]-as.list(cVegAllModelsS1[1,2:12])
+  
+  
   
   meltedS3 <- melt(cVegAllModelsS3,id.vars='year')
   
@@ -267,19 +307,15 @@ grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
   
   meltedS1 <- melt(cVegAllModelsS1,id.vars='year')
   
-  meltedS2minusS1<- meltedS2
-  meltedS2minusS1$value <- meltedS2$value-meltedS1$value
+  meltedS2minusS1<- melt(cVegAllModelsS2minusS1,id.vars='year')
+  meltedS3minusS2<- melt(cVegAllModelsS3minusS2,id.vars='year')
   
-  meltedS3minusS2<- meltedS3
-  meltedS3minusS2$value <- meltedS3$value-meltedS2$value
-  
-  
-  colpalette <- hue_pal()(12)
+  colpalette <- hue_pal()(11)
   colpalette <- c(colpalette,"#909090")
   
-  ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+  ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
   
-  lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+  lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 
   
 p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) + 
@@ -341,29 +377,28 @@ p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) +
 
 grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
 
-
 #interquartile range
 
 cVegAllModelsS3minusS2 <- cVegAllModelsS3
-cVegAllModelsS3minusS2[,2:13] <- cVegAllModelsS3[,2:13]-cVegAllModelsS2[,2:13]
+cVegAllModelsS3minusS2[,2:12] <- cVegAllModelsS3[,2:12]-cVegAllModelsS2[,2:12]
 
 cVegAllModelsS2minusS1 <- cVegAllModelsS3
-cVegAllModelsS2minusS1[,2:13] <- cVegAllModelsS2[,2:13]-cVegAllModelsS1[,2:13]
+cVegAllModelsS2minusS1[,2:12] <- cVegAllModelsS2[,2:12]-cVegAllModelsS1[,2:12]
 
-cVegAllModelsS1mean <- apply(cVegAllModelsS1[,2:13],1,mean,na.rm=T)
-cVegAllModelsS3mean <- apply(cVegAllModelsS3[,2:13],1,mean,na.rm=T)
+cVegAllModelsS1mean <- apply(cVegAllModelsS1[,2:12],1,mean,na.rm=T)
+cVegAllModelsS3mean <- apply(cVegAllModelsS3[,2:12],1,mean,na.rm=T)
 
-cVegAllModelsS2minusS1mean <- apply(cVegAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
-cVegAllModelsS3minusS2mean <- apply(cVegAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+cVegAllModelsS2minusS1mean <- apply(cVegAllModelsS2minusS1[,2:12],1,mean,na.rm=T)
+cVegAllModelsS3minusS2mean <- apply(cVegAllModelsS3minusS2[,2:12],1,mean,na.rm=T)
 
-cVegAllModelsS1_Quartlower<- apply(cVegAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cVegAllModelsS1_Quartupper <-  apply(cVegAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
-cVegAllModelsS3_Quartlower<- apply(cVegAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cVegAllModelsS3_Quartupper <-  apply(cVegAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
-cVegAllModelsS2minusS1_Quartlower<- apply(cVegAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cVegAllModelsS2minusS1_Quartupper <-  apply(cVegAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
-cVegAllModelsS3minusS2_Quartlower<- apply(cVegAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25)})
-cVegAllModelsS3minusS2_Quartupper <-  apply(cVegAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS1_Quartlower<- apply(cVegAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS1_Quartupper <-  apply(cVegAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS3_Quartlower<- apply(cVegAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS3_Quartupper <-  apply(cVegAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS2minusS1_Quartlower<- apply(cVegAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS2minusS1_Quartupper <-  apply(cVegAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
+cVegAllModelsS3minusS2_Quartlower<- apply(cVegAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.25)})
+cVegAllModelsS3minusS2_Quartupper <-  apply(cVegAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.75)}) 
 
 #cVeg ribbon plots
 
@@ -434,10 +469,48 @@ cSoilAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_drylan
 cSoilAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_S2_drylands_1901_2018.csv"))
 cSoilAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cSoil/cSoil_S1_drylands_1901_2018.csv"))
 
+cLitterAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cLitter/cLitter_drylands_1901_2018.csv"))
+cLitterAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cLitter/cLitter_S2_drylands_1901_2018.csv"))
+cLitterAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cLitter/cLitter_S1_drylands_1901_2018.csv"))
 
-cSoilAllModelsS3[,2:13] <-  cSoilAllModelsS3[,2:13]-as.list(cSoilAllModelsS3[1,2:13])
-cSoilAllModelsS2[,2:13] <-  cSoilAllModelsS2[,2:13]-as.list(cSoilAllModelsS2[1,2:13])
-cSoilAllModelsS1[,2:13] <-  cSoilAllModelsS1[,2:13]-as.list(cSoilAllModelsS1[1,2:13])
+cLitterAllModelsS3[is.na(cLitterAllModelsS3)] <- 0
+cLitterAllModelsS2[is.na(cLitterAllModelsS2)] <- 0
+cLitterAllModelsS1[is.na(cLitterAllModelsS1)] <- 0
+
+cCwdAllModelsS3 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cCwd/cCwd_drylands_1901_2018.csv"))
+cCwdAllModelsS2 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cCwd/cCwd_S2_drylands_1901_2018.csv"))
+cCwdAllModelsS1 <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cCwd/cCwd_S1_drylands_1901_2018.csv"))
+
+cCwdAllModelsS3[is.na(cCwdAllModelsS3)] <- 0
+cCwdAllModelsS2[is.na(cCwdAllModelsS2)] <- 0
+cCwdAllModelsS1[is.na(cCwdAllModelsS1)] <- 0
+
+#add Litter and Cwd carbon pools to cSoil
+
+cSoilAllModelsS3[,2:12] <- cSoilAllModelsS3[,2:12]+cCwdAllModelsS3[,2:12]+cLitterAllModelsS3[,2:12]   
+cSoilAllModelsS2[,2:12] <- cSoilAllModelsS2[,2:12]+cCwdAllModelsS2[,2:12]+cLitterAllModelsS2[,2:12]  
+cSoilAllModelsS1[,2:12] <- cSoilAllModelsS1[,2:12]+cCwdAllModelsS1[,2:12]+cLitterAllModelsS1[,2:12]  
+
+#remove ISAM from all
+cSoilAllModelsS1[,6] <- NA
+cSoilAllModelsS2[,6] <- NA
+cSoilAllModelsS3[,6] <- NA
+
+cSoilAllModelsS3minusS2 <- cSoilAllModelsS3
+cSoilAllModelsS3minusS2[,2:12] <- cSoilAllModelsS3[,2:12]-cSoilAllModelsS2[,2:12]
+
+cSoilAllModelsS2minusS1 <- cSoilAllModelsS3
+cSoilAllModelsS2minusS1[,2:12] <- cSoilAllModelsS2[,2:12]-cSoilAllModelsS1[,2:12]
+
+cSoilAllModelsS3minusS2[,2:12] <-  cSoilAllModelsS3minusS2[,2:12]-as.list(cSoilAllModelsS3minusS2[1,2:12])
+cSoilAllModelsS2minusS1[,2:12] <-  cSoilAllModelsS2minusS1[,2:12]-as.list(cSoilAllModelsS2minusS1[1,2:12])
+
+
+cSoilAllModelsS3[,2:12] <-  cSoilAllModelsS3[,2:12]-as.list(cSoilAllModelsS3[1,2:12])
+cSoilAllModelsS2[,2:12] <-  cSoilAllModelsS2[,2:12]-as.list(cSoilAllModelsS2[1,2:12])
+cSoilAllModelsS1[,2:12] <-  cSoilAllModelsS1[,2:12]-as.list(cSoilAllModelsS1[1,2:12])
+
+
 
 meltedS3 <- melt(cSoilAllModelsS3,id.vars='year')
 
@@ -445,18 +518,15 @@ meltedS2 <- melt(cSoilAllModelsS2,id.vars='year')
 
 meltedS1 <- melt(cSoilAllModelsS1,id.vars='year')
 
-meltedS2minusS1<- meltedS2
-meltedS2minusS1$value <- meltedS2$value-meltedS1$value
+meltedS2minusS1<- melt(cSoilAllModelsS2minusS1,id.vars='year')
+meltedS3minusS2<- melt(cSoilAllModelsS3minusS2,id.vars='year')
 
-meltedS3minusS2<- meltedS3
-meltedS3minusS2$value <- meltedS3$value-meltedS2$value
-
-colpalette <- hue_pal()(12)
+colpalette <- hue_pal()(11)
 colpalette <- c(colpalette,"#909090")
 
-ltytest <- c(1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,2,1,2,1,2,1,2,1,2,1)
 
-lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(1,1,1,1,1,1,1,1,1,1,1)
 
 #melted <- melt(dfallyears,id.vars='years')
 p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) + 
@@ -528,25 +598,25 @@ grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
 #interquartile range
 
 cSoilAllModelsS3minusS2 <- cSoilAllModelsS3
-cSoilAllModelsS3minusS2[,2:13] <- cSoilAllModelsS3[,2:13]-cSoilAllModelsS2[,2:13]
+cSoilAllModelsS3minusS2[,2:12] <- cSoilAllModelsS3[,2:12]-cSoilAllModelsS2[,2:12]
 
 cSoilAllModelsS2minusS1 <- cSoilAllModelsS3
-cSoilAllModelsS2minusS1[,2:13] <- cSoilAllModelsS2[,2:13]-cSoilAllModelsS1[,2:13]
+cSoilAllModelsS2minusS1[,2:12] <- cSoilAllModelsS2[,2:12]-cSoilAllModelsS1[,2:12]
 
-cSoilAllModelsS1mean <- apply(cSoilAllModelsS1[,2:13],1,mean,na.rm=T)
-cSoilAllModelsS3mean <- apply(cSoilAllModelsS3[,2:13],1,mean,na.rm=T)
+cSoilAllModelsS1mean <- apply(cSoilAllModelsS1[,2:12],1,mean,na.rm=T)
+cSoilAllModelsS3mean <- apply(cSoilAllModelsS3[,2:12],1,mean,na.rm=T)
 
-cSoilAllModelsS2minusS1mean <- apply(cSoilAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
-cSoilAllModelsS3minusS2mean <- apply(cSoilAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+cSoilAllModelsS2minusS1mean <- apply(cSoilAllModelsS2minusS1[,2:12],1,mean,na.rm=T)
+cSoilAllModelsS3minusS2mean <- apply(cSoilAllModelsS3minusS2[,2:12],1,mean,na.rm=T)
 
-cSoilAllModelsS1_Quartlower<- apply(cSoilAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cSoilAllModelsS1_Quartupper <-  apply(cSoilAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cSoilAllModelsS3_Quartlower<- apply(cSoilAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cSoilAllModelsS3_Quartupper <-  apply(cSoilAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cSoilAllModelsS2minusS1_Quartlower<- apply(cSoilAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cSoilAllModelsS2minusS1_Quartupper <-  apply(cSoilAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cSoilAllModelsS3minusS2_Quartlower<- apply(cSoilAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cSoilAllModelsS3minusS2_Quartupper <-  apply(cSoilAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS1_Quartlower<- apply(cSoilAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS1_Quartupper <-  apply(cSoilAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS3_Quartlower<- apply(cSoilAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS3_Quartupper <-  apply(cSoilAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS2minusS1_Quartlower<- apply(cSoilAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS2minusS1_Quartupper <-  apply(cSoilAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cSoilAllModelsS3minusS2_Quartlower<- apply(cSoilAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cSoilAllModelsS3minusS2_Quartupper <-  apply(cSoilAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
 
 #cSoil ribbon plots
 
@@ -555,7 +625,7 @@ p1 <- ggplot(cSoilS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-15,15))+
+  ylim(c(-50,50))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cSoil S1" ~ "["~ Pg ~ C ~ "]")) +
   labs(title=bquote('e)' ~ CO[2] ~'change'))+
@@ -570,7 +640,7 @@ p2 <- ggplot(cSoilS2minusS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-15,15))+
+  ylim(c(-50,50))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cSoil S2 - S1" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='f) climate change')+
@@ -585,7 +655,7 @@ p3 <- ggplot(cSoilS3minusS2ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-15,15))+
+  ylim(c(-50,50))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cSoil S3 - S2" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='g) land-use change')+
@@ -600,7 +670,7 @@ p4 <- ggplot(cSoilS3ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-15,15))+
+  ylim(c(-50,50))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cSoil S3" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='h) net change')+
@@ -622,9 +692,9 @@ cEcoAllModelsS2 <- cVegAllModelsS2
 cEcoAllModelsS1 <- cVegAllModelsS1
 
 
-cEcoAllModelsS3[,2:13] <-  cVegAllModelsS3[,2:13]+cSoilAllModelsS3[,2:13]
-cEcoAllModelsS2[,2:13] <-  cVegAllModelsS2[,2:13]+cSoilAllModelsS2[,2:13]
-cEcoAllModelsS1[,2:13] <-  cVegAllModelsS1[,2:13]+cSoilAllModelsS1[,2:13]
+cEcoAllModelsS3[,2:12] <-  cVegAllModelsS3[,2:12]+cSoilAllModelsS3[,2:12]
+cEcoAllModelsS2[,2:12] <-  cVegAllModelsS2[,2:12]+cSoilAllModelsS2[,2:12]
+cEcoAllModelsS1[,2:12] <-  cVegAllModelsS1[,2:12]+cSoilAllModelsS1[,2:12]
 
 meltedS3 <- melt(cEcoAllModelsS3,id.vars='year')
 
@@ -651,7 +721,7 @@ p1 <- ggplot(data=meltedS1,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-60,60))+
+  ylim(c(-70,70))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -666,7 +736,7 @@ p2 <- ggplot(data=meltedS2minusS1,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-60,60))+
+  ylim(c(-70,70))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -681,7 +751,7 @@ p3 <- ggplot(data=meltedS3minusS2,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-60,60))+
+  ylim(c(-70,70))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -695,7 +765,7 @@ p4 <- ggplot(data=meltedS3,aes(x=year,y=value,group=variable)) +
   scale_colour_manual(values = colpalette)+
   scale_size_manual(values = lwdtest)+
   scale_linetype_manual(values = ltytest)+
-  ylim(c(-60,60))+
+  ylim(c(-70,70))+
   #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
   #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
@@ -715,25 +785,25 @@ grid.arrange(p1,p2,p3,p4,ncol=4)#,layout_matrix = c(1,1,2,3))
 #interquartile range
 
 cEcoAllModelsS3minusS2 <- cEcoAllModelsS3
-cEcoAllModelsS3minusS2[,2:13] <- cEcoAllModelsS3[,2:13]-cEcoAllModelsS2[,2:13]
+cEcoAllModelsS3minusS2[,2:12] <- cEcoAllModelsS3[,2:12]-cEcoAllModelsS2[,2:12]
 
 cEcoAllModelsS2minusS1 <- cEcoAllModelsS3
-cEcoAllModelsS2minusS1[,2:13] <- cEcoAllModelsS2[,2:13]-cEcoAllModelsS1[,2:13]
+cEcoAllModelsS2minusS1[,2:12] <- cEcoAllModelsS2[,2:12]-cEcoAllModelsS1[,2:12]
 
-cEcoAllModelsS1mean <- apply(cEcoAllModelsS1[,2:13],1,mean,na.rm=T)
-cEcoAllModelsS3mean <- apply(cEcoAllModelsS3[,2:13],1,mean,na.rm=T)
+cEcoAllModelsS1mean <- apply(cEcoAllModelsS1[,2:12],1,mean,na.rm=T)
+cEcoAllModelsS3mean <- apply(cEcoAllModelsS3[,2:12],1,mean,na.rm=T)
 
-cEcoAllModelsS2minusS1mean <- apply(cEcoAllModelsS2minusS1[,2:13],1,mean,na.rm=T)
-cEcoAllModelsS3minusS2mean <- apply(cEcoAllModelsS3minusS2[,2:13],1,mean,na.rm=T)
+cEcoAllModelsS2minusS1mean <- apply(cEcoAllModelsS2minusS1[,2:12],1,mean,na.rm=T)
+cEcoAllModelsS3minusS2mean <- apply(cEcoAllModelsS3minusS2[,2:12],1,mean,na.rm=T)
 
-cEcoAllModelsS1_Quartlower<- apply(cEcoAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cEcoAllModelsS1_Quartupper <-  apply(cEcoAllModelsS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cEcoAllModelsS3_Quartlower<- apply(cEcoAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cEcoAllModelsS3_Quartupper <-  apply(cEcoAllModelsS3[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cEcoAllModelsS2minusS1_Quartlower<- apply(cEcoAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cEcoAllModelsS2minusS1_Quartupper <-  apply(cEcoAllModelsS2minusS1[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
-cEcoAllModelsS3minusS2_Quartlower<- apply(cEcoAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
-cEcoAllModelsS3minusS2_Quartupper <-  apply(cEcoAllModelsS3minusS2[,2:13],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS1_Quartlower<- apply(cEcoAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS1_Quartupper <-  apply(cEcoAllModelsS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS3_Quartlower<- apply(cEcoAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS3_Quartupper <-  apply(cEcoAllModelsS3[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS2minusS1_Quartlower<- apply(cEcoAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS2minusS1_Quartupper <-  apply(cEcoAllModelsS2minusS1[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
+cEcoAllModelsS3minusS2_Quartlower<- apply(cEcoAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.25,na.rm=T)})
+cEcoAllModelsS3minusS2_Quartupper <-  apply(cEcoAllModelsS3minusS2[,2:12],1,FUN=function(x){quantile(x,0.75,na.rm=T)}) 
 
 #cEco ribbon plots
 
@@ -742,7 +812,7 @@ p1 <- ggplot(cEcoS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-40,40))+
+  ylim(c(-70,70))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cEco S1" ~ "["~ Pg ~ C ~ "]")) +
   labs(title=bquote('e)' ~ CO[2] ~'change'))+
@@ -757,7 +827,7 @@ p2 <- ggplot(cEcoS2minusS1ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-40,40))+
+  ylim(c(-70,70))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cEco S2 - S1" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='f) climate change')+
@@ -772,7 +842,7 @@ p3 <- ggplot(cEcoS3minusS2ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-40,40))+
+  ylim(c(-70,70))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cEco S3 - S2" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='g) land-use change')+
@@ -787,7 +857,7 @@ p4 <- ggplot(cEcoS3ribbonplotdf, aes(x = years)) +
   theme_classic() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ylim(c(-40,40))+
+  ylim(c(-70,70))+
   xlab('Time [yr]') +
   ylab(bquote(Delta ~" cEco S3" ~ "["~ Pg ~ C ~ "]")) +
   labs(title='h) net change')+
