@@ -121,7 +121,7 @@ cVeg[cVeg==fillvalue$value] <- NA
 
 modelvec <- seq(1,16,1)
 modelvec <- modelvec[c(-10,-11,-15,-16)] #remove models where some TRENDY inputs are missing
-
+maxcountvec <- rep(1,13)
 #matrix of regression/correlation values (remove CCC)
 coeffmat <- matrix(NA,ncol=6,nrow=14)
 coeffmat[1,] <- c('model','pearsonsr','linCCC','slope','intercept','npix')
@@ -137,7 +137,7 @@ for(j in 1:12){#add individual models
     modelindex <- modelvec[j]
     TRENDYmodelstack <- stack(paste0("D:/Driving_C/DGVM/TRENDYmodelscVeg/",modelnames[j],"_AGC2011_2018_1deg.tif"))
     TRENDYmodelCbrick <- TRENDYmodelstack#calc(TRENDYmodelstack,mean,na.rm=T)
-
+    TRENDYmodelCbrick[TRENDYmodelCbrick<0] <- 0
   }else{
     
     modelindex <- modelvec[j]
@@ -170,23 +170,29 @@ for(j in 1:12){#add individual models
   DGVMname <- modelnames[modelindex]
   
   
-  geom_hex(bins = 100, show.legend=T)
-  
   #make scatterplot
-  meanscatterplotlist[[j]] <- ggplot(df) +
-    geom_point(aes(x, y),size=0.5,alpha=0.1) +
-    scale_color_identity() +
+  meanscatterplotlist[[j]] <- ggplot(df,aes(x=x,y=y)) +
+    geom_hex(bins = 30, show.legend=F)+
+    #geom_point(aes(x, y),size=0.5,alpha=0.1) +
+    #scale_color_identity() +
+    #scale_fill_continuous(type = "viridis") + 
+    #scale_fill_viridis(name = "count", trans = "log", 
+    #                    breaks = 10^(0:6),limits=c(1,2000))+
     theme_bw() +
     theme_classic() +
     theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
-    labs(title=paste(titlelist[titlenr],DGVMname),x="LVOD C density",y=bquote("modelled C density"))+#,title=paste0('Carbon density: ',DGVMname)) +
+    labs(title=paste(titlelist[titlenr],DGVMname),x="LVOD C density",y=bquote("modelled C density"))+#+#,title=paste0('Carbon density: ',DGVMname)) +
     coord_fixed()+
-    ylim(c(0,150))+
-    xlim(c(0,150))
+    ylim(c(-10,150))+
+    xlim(c(-10,150))
     titlenr <- titlenr+1
 
+    #plot(meanscatterplotlist[[j]])
   #calculate statistics and add regression line to plot
-  
+
+    #get value of highest bin for adjusting colour scale
+maxcountvec[j] <- max(ggplot_build(meanscatterplotlist[[j]])$data[[1]]$count)   
+      
 VODvals <- VODCarbonyearmeans$value
 DGVMvals <- DGVMCarbonyearmeans$value
 
@@ -236,9 +242,10 @@ df <- data.frame(x = carbondryclassdf$VOD, y = carbondryclassdf$DGVM)
 
 DGVMname <- 'TRENDY'
 
-meanscatterplotlist[[j+1]] <- ggplot(df) +
-  geom_point(aes(x, y),size=0.5,alpha=0.1) +
-  scale_color_identity() +
+meanscatterplotlist[[j+1]] <- ggplot(df,aes(x=x,y=y)) +
+  geom_hex(bins = 30, show.legend=F)+
+  #geom_point(aes(x, y),size=0.5,alpha=0.1) +
+  #scale_color_identity() +
   theme_bw() +
   theme_classic() +
   theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
@@ -247,7 +254,8 @@ meanscatterplotlist[[j+1]] <- ggplot(df) +
   ylim(c(0,150))+
   xlim(c(0,150))
 
-
+#get value of highest bin for adjusting colour scale
+maxcountvec[j+1] <- max(ggplot_build(meanscatterplotlist[[j+1]])$data[[1]]$count)   
 #calculate statistics and add regression line to plot
 
 VODvals <- VODCarbonyearmeans$value
@@ -276,6 +284,11 @@ coeffmat[rcount,4] <- demingreg$coefficients[2]#slope
 coeffmat[rcount,5] <- demingreg$coefficients[1]#intercept
 coeffmat[rcount,6] <- sum(is.finite(VODvals*DGVMvals))#number of pixels
 rcount <- rcount+1
+
+#for each plot, define colour scale using max count of all plots
+for(n in 1:13){
+  meanscatterplotlist[[n]] <-  meanscatterplotlist[[n]]+scale_fill_viridis(name = "count", trans = "log",breaks = 10^(0:6),limits=c(1,max(maxcountvec)))
+}
 
 #arrange and plot all scatterplots
 grid.arrange(grobs=meanscatterplotlist,nrow=3,ncol=5)                     

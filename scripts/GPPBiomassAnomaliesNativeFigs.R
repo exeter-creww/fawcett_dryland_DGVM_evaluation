@@ -37,9 +37,13 @@ cVegalldf <- data.frame(year=yearlistmod)
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
 drylandclassraster <- raster("./Plots/drylandclassclipfin.tif")
 
+
 #dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
 drylandclass <- readOGR(dsn = getwd(), layer = "drylandsglobal")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
 drylandclassSub <- readOGR(dsn = getwd(), layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
+drylandclasssf <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactextractr
+drylandclassSubsf <- st_as_sfc(drylandclassSub) #spatialpolygonsdf to sfc for exactextractr
+
 
 
 #preprocessing of VOD data to median annual composites can be found in LVODprocessingAnnualStackFin.R
@@ -48,6 +52,11 @@ VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median
 
 #preprocessing of PMLv2 GPP in GEE
 GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
+
+
+#alternative GPP datasets test
+#load("D:/Driving_C/GPP_datasets/Zheng_2020/GPP_global_Zheng_82-16.RData")
+
 
 #2011 to 2018 (2010 does not have reliable values, extend to 2019 once TRENDY runs available)
 VODstack <- VODannualstacktot[[2:9]]
@@ -81,15 +90,27 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   PMLdatamask <- !is.na(sum(GPPfinbrick)) #only use pixels with data valid GPP data for all years
   PMLdatamask [PMLdatamask ==0] <- NA
 
-  arearaster <- raster::mask(raster::mask(area(GPPfinbrick)*100,drylandmaskPML),PMLdatamask)# 100 hectares in 1 km2
+  #arearaster <- raster::mask(raster::mask(area(GPPfinbrick)*100,drylandmaskPML),PMLdatamask)# 100 hectares in 1 km2
+  
+  
+  arearaster <- area(PMLdatamask)*100#*lcfraster
+  
+  
+  #GPP calc
   
   totalpercell <- arearaster*GPPfinbrick
   
-  totalglobal <- cellStats(totalpercell,sum,na.rm=T)
+  totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+  totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+  
+  totalglobalextract[,1:16] <- totalglobalextract[,1:16]*totalglobalextract$coverage_fraction
+  
+  totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+  
   
   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
-  
   drylandGPPPML <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
+
   
   
   #TRENDY mean GPP
@@ -174,13 +195,14 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
   ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
-  
+  alphavals <- c(1,1,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5)
   
   GPPplotvariance <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
-    geom_line(aes(colour=variable,lwd=variable,lty=variable),alpha=0.5)+
+    geom_line(aes(colour=variable,lwd=variable,lty=variable))+
     scale_colour_manual(values = colpalette)+
     scale_size_manual(values = lwdtest)+
     scale_linetype_manual(values = ltytest)+
+    scale_alpha_manual(values=alphavals)+
     theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
     labs(title='b)',y=bquote("norm. GPP IAV " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')+

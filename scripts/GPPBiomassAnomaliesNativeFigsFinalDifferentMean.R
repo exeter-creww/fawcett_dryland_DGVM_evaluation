@@ -123,7 +123,9 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   GPPPMLcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
   
-  df <- cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
+  newTRENDYmean <- rowMeans(GPPPMLcompAllModels[,2:13])
+  
+  df <- cbind(TRENDY=newTRENDYmean,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
   
   melted <- melt(df,id.vars='year')
   
@@ -202,7 +204,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
   
   
-  dfribbon <-  cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)#cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  dfribbon <-  cbind(TRENDY=newTRENDYmean,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)#cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   #normalize to mean of time series
   dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
@@ -281,7 +283,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP,modelmeans=colMeans(dfstats[1:13]),PMLmean=mean(drylandGPPPML$GPP))
    
-  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018_fin_fixed_PMLV2v016.csv",sep=',',row.names=F)
+  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018_fin_fixed_PMLV2v016_truemean.csv",sep=',',row.names=F)
   
   #calculate sen's slope and pvalue for each series
   
@@ -296,7 +298,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendCIlow <- apply(df,2,fun3)
   TStrendCIhigh <- apply(df,2,fun4)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018_fin_PMLV2v016.csv",sep=',',row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018_fin_PMLV2v016_truemean.csv",sep=',',row.names=F)
   
    
   ##############
@@ -363,7 +365,9 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   cVegVODcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/AGC_drylands_2011_2018.csv"))
   
   
-  df <- cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  newTRENDYmean <- rowMeans(cVegVODcompAllModels[,2:13])
+  
+  df <- cbind(TRENDY=newTRENDYmean,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   
   melted <- melt(df,id.vars='year')
@@ -441,12 +445,12 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   
   #ribbon plot variant
-  
+   
   dfribbon <- df
  # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
   
   
-  dfribbon <-  cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  dfribbon <-  cbind(TRENDY=newTRENDYmean,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   #normalize to mean of time series
   dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
@@ -524,7 +528,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC,modelmeans=colMeans(dfstats[1:13]),LVODmean=mean(drylandcVegVOD$LVOD))
   
-  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelsAGCstats_2011_2018_fin_meancorr.csv",sep=',',row.names=F)
+  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelsAGCstats_2011_2018_fin_truemean.csv",sep=',',row.names=F)
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
@@ -537,7 +541,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendCIlow <- apply(df,2,fun3)
   TStrendCIhigh <- apply(df,2,fun4)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018_fin_meancorr.csv",sep=',',row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018_fin_truemean.csv",sep=',',row.names=F)
   
   #############
   #model time series of cVeg and cSoil since 1901

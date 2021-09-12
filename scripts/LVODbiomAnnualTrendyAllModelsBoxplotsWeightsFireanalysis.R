@@ -51,7 +51,7 @@ VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median
 VODstack <- VODannualstacktot[[2:9]]
 
 
-TRENDYmeanbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')
+TRENDYmeanbrick <- brick('./DGVM/TRENDYAGC2011_2018v3.tif')
 
 #create longitude based mask and apply to filter out northernmost and southernmost regions
 longmask <- TRENDYmeanbrick[[1]]
@@ -140,6 +140,13 @@ for(j in 1:12){#add individual models
   
   #read cVeg from netcdf, aggregate to mean raster
   
+  if(j %in% c(1,2,3,5)){ #if model AGC can be calculated, use this, otherwise use 0.4
+    modelindex <- modelvec[j]
+    TRENDYmodelstack <- stack(paste0("D:/Driving_C/DGVM/TRENDYmodelscVeg/",modelnames[j],"_AGC2011_2018_1deg.tif"))
+    TRENDYmodelCbrick <- TRENDYmodelstack#calc(TRENDYmodelstack,mean,na.rm=T)
+    
+  }else{
+  
   modelindex <- modelvec[j]
   
   TRENDYmodelstack <- cVeg[,,111:118,modelindex]
@@ -151,8 +158,12 @@ for(j in 1:12){#add individual models
   extent(TRENDYmodelCbrick) <- c(-180, 180, -90, 90)
   projection(TRENDYmodelCbrick) <- CRS("+init=epsg:4326")
   
+  TRENDYmodelCbrick <- TRENDYmodelCbrick*0.4 #convert to AGC
+  
+  }
+  
   #extract pixel values and convert to Mg C ha
-  DGVMCarbonyearmeansperpoly <- exactextractr::exact_extract(calc(TRENDYmodelCbrick,mean,na.rm=T)*0.4*10,VODdatamaskdryalndssf,force_df=T)#,normalizeWeights=F,df=T)#mask(calc(TRENDYmodelCbrick,mean,na.rm=T),regionDrylandsmask)*0.4*10
+  DGVMCarbonyearmeansperpoly <- exactextractr::exact_extract(calc(TRENDYmodelCbrick,mean,na.rm=T)*10,VODdatamaskdryalndssf,force_df=T)#,normalizeWeights=F,df=T)#mask(calc(TRENDYmodelCbrick,mean,na.rm=T),regionDrylandsmask)*0.4*10
   DGVMCarbonyearmeans <- do.call('rbind',DGVMCarbonyearmeansperpoly)
 
   DGVMCarbonDryClass <- DGVMCarbonyearmeans$value
@@ -193,7 +204,7 @@ for(j in 1:12){#add individual models
     geom_abline(slope=0,intercept=0,linetype='dashed')+
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
     #coord_fixed()+
-    ylim(c(-100,100))
+    ylim(c(-150,150))
   #xlim(c(0,1))
   titlenr <- titlenr+1
   
@@ -270,7 +281,7 @@ meanscatterplotlist[[j+1]] <- ggplot(df,aes(bin,y)) +
   geom_abline(slope=0,intercept=0,linetype='dashed')+
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
   labs(title=paste(titlelist[titlenr],DGVMname),x=bquote("Burned frequency"),y="modelled - LVOD C density")+
-  ylim(c(-100,100))#+
+  ylim(c(-150,150))#+
 
 
 #calculate statistics and add regression line to plot
@@ -308,7 +319,7 @@ rcount <- rcount+1
 grid.arrange(grobs=meanscatterplotlist,nrow=3,ncol=5)                     
 
 #save stats table
-write.csv(coeffmat,'./stats/deltaDGVM_LVOD_Carbon_BurnedArea_TrendStatsWeightedV1.csv')
+write.csv(coeffmat,'./stats/deltaDGVM_LVOD_Carbon_BurnedArea_TrendStatsWeightedV2_GLOBBIOMASS_AGC.csv')
 
 
 

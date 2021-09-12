@@ -32,20 +32,28 @@ drylandclassSubsf <- st_as_sfc(drylandclassSub) #spatialpolygonsdf to sfc for ex
 
 #mask of dryland regions with reliable VOD data, generated from VOD data mask in ArcMap (error with R vectorisation) 
 VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
-VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
+VODdatamaskdrylandssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
 
 #preprocessing of PMLv2 GPP in GEE
 GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
+
+
+#TRENDY mean data bricks
+
+TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to Mg C per ha
 
     
   gppmodelpath <- 'CLM5.0_S3_gpp.nc'
   cVegmodelpath <- 'CLM5.0_S3_cVeg.nc'
   #lcpath <- 'OCN_S3_oceanCoverFrac.nc'
   cSoilmodelpath <- 'CLM5.0_S3_cSoil.nc'
+  cRootmodelpath <- 'CLM5.0_S3_cRoot.nc'
+  
   #4 dimensional netcdf
   ncingpp <- nc_open(paste0("./DGVM/TRENDYmodelsGPP/origGrids/",gppmodelpath))
   ncincVeg <- nc_open(paste0("./DGVM/TRENDYmodelscVeg/origGrids/",cVegmodelpath))
   ncincSoil <- nc_open(paste0("./DGVM/TRENDYmodelscSoil/origGrids/",cSoilmodelpath))
+  ncincRoot <- nc_open(paste0("D:/Driving_C/DGVM/TRENDYmodelscRoot/origGrids/",cRootmodelpath))
   
   #lcncin <-  nc_open(paste0("D:/Driving_C/DGVM/TRENDYmodelsLandCover/",lcpath))
 
@@ -64,6 +72,8 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(303*12)+1),count=c(nlonDGVM,nlatDGVM,192))
   modelcVeg <- ncvar_get(ncincVeg,'cVeg')#,start=c(1,1,(102*12)+1),count=c(nlonDGVM,nlatDGVM,192))
   modelcVegVODcomp <- modelcVeg[,,312:319]
+  modelcRoot <- ncvar_get(ncincRoot,'cRoot')#,start=c(1,1,(102*12)+1),count=c(nlonDGVM,nlatDGVM,192))
+  modelcRootVODcomp <- modelcRoot[,,312:319]
   modelcVeg <- modelcVeg[,,202:319]
   modelcSoil <- ncvar_get(ncincSoil,'cSoil')#,start=c(1,1,(102*12)+1),count=c(nlonDGVM,nlatDGVM,192))
   modelcSoil <- modelcSoil[,,202:319]
@@ -71,12 +81,14 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
   
   modelgpp[modelgpp==fillvalue$value] <- NA
   modelcVegVODcomp[modelcVegVODcomp==fillvalue$value] <- NA
+  modelcRootVODcomp[modelcRootVODcomp==fillvalue$value] <- NA
   modelcVeg[modelcVeg==fillvalue$value] <- NA
   modelcSoil[modelcSoil==fillvalue$value] <- NA
 
   
   modelgppbrick <- t(raster::flip(brick(modelgpp),1))#no flip  needed for DLEM
   modelcVegVODcompbrick <-  t(raster::flip(brick(modelcVegVODcomp),1))
+  modelcRootVODcompbrick <-  t(raster::flip(brick(modelcRootVODcomp),1))
   modelcVegbrick <-  t(raster::flip(brick(modelcVeg),1))
   modelcSoilbrick <-  t(raster::flip(brick(modelcSoil),1))
   
@@ -90,6 +102,11 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
   modelcVegVODcompbrick <- rotate(modelcVegVODcompbrick)
   
+  extent(modelcRootVODcompbrick) <- c(0, 360, -90, 90)
+  projection(modelcRootVODcompbrick) <- CRS("+init=epsg:4326")
+  modelcRootVODcompbrick <- rotate(modelcRootVODcompbrick)
+  
+  
   extent(modelcVegbrick) <- c(0, 360, -90, 90)
   projection(modelcVegbrick) <- CRS("+init=epsg:4326")
   modelcVegbrick <- rotate(modelcVegbrick)
@@ -102,6 +119,19 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
  # extent(lcfraster) <- c(-180, 180, -90, 90)
  # projection(lcfraster) <- CRS("+init=epsg:4326")
   
+  #export cRoot brick resampled to 1 degree
+  modelcRootVODcompbrickresamp <- raster::resample(modelcRootVODcompbrick,TRENDYcVegbrick[[1]]) 
+  modelcVegVODcompbrickresamp <- raster::resample(modelcVegVODcompbrick,TRENDYcVegbrick[[1]]) 
+  
+  AGCmap <- (modelcVegVODcompbrickresamp-modelcRootVODcompbrickresamp)
+  AGCfracmap <- (modelcVegVODcompbrick-modelcRootVODcompbrick)/modelcVegVODcompbrick
+  AGCfracdrylandsmap <- mask(AGCfracmap,drylandclass)
+  AGCfracdrylandsmap[AGCfracdrylandsmap<0] <- NA
+  
+  writeRaster(modelcRootVODcompbrickresamp,'./DGVM/TRENDYmodelscRoot/CLM5.0_cRoot2011_2018_1deg.tif',overwrite=T)
+  writeRaster(AGCmap,'./DGVM/TRENDYmodelscVeg/CLM5.0_AGC2011_2018_1deg.tif',overwrite=T)
+  
+  
   nc_close(ncingpp)
   nc_close(ncincVeg)
  # nc_close(lcncin)
@@ -113,9 +143,9 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelannualgpp <- modelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
   
   modelannualcVegVODcomp <- modelcVegVODcompbrick*10
+  modelannualcRootVODcomp <- modelcRootVODcompbrick*10
   modelannualcVeg <- modelcVegbrick
   modelannualcSoil <- modelcSoilbrick
-
   
   #PML data mask as raster
   GPPstacksresamp <- raster::resample(GPPstack,modelannualgpp[[1]])
@@ -185,7 +215,7 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    totalpercell <- arearaster*modelannualcVegVODcomp
    
-   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,VODdatamaskdryalndssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,VODdatamaskdrylandssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
    totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
    totalglobalextract[,1:8] <- totalglobalextract[,1:8]*totalglobalextract$coverage_fraction
@@ -193,11 +223,30 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
    
    
-   totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
    write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_cVeg_2011_2018.csv",sep=",",row.names = F)
+   
+   #cVeg VOD comp calc
+   arearaster <- area(modelannualcVegVODcomp[[1]])*100#*lcfraster
+   
+   totalpercell <- arearaster*(modelannualcVegVODcomp-modelannualcRootVODcomp)
+   
+   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,VODdatamaskdrylandssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
+   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
+   
+   totalglobalextract[,1:8] <- totalglobalextract[,1:8]*totalglobalextract$coverage_fraction
+   
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
+   
+   
+   totalglobalPgC <- totalglobal/(10^9)#from Mg to Pg, from cVeg to AGC
+   
+   dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
+   
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_AGC_2011_2018.csv",sep=",",row.names = F)
    
    #cVeg VOD comp calc all cells touched
    
@@ -211,7 +260,7 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_cVeg_2011_2018_extended.csv",sep=",",row.names = F)
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_AGC_2011_2018_extended.csv",sep=",",row.names = F)
   
    
    #cVeg VOD comp calc only cells with centre within
@@ -227,7 +276,7 @@ GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
-   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_cVeg_2011_2018_contained.csv",sep=",",row.names = F)
+   write.table(dfdrylandcVeg,"D:/Driving_C/DGVM/DGVMdrylandTS/cVeg/CLM5.0_dryland_AGC_2011_2018_contained.csv",sep=",",row.names = F)
    
 
     

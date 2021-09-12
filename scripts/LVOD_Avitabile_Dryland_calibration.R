@@ -53,10 +53,14 @@ drylandmask[drylandmask==0] <- NA
 
 VOD2011masked <- VOD2011*drylandmask
 
+#step currently not in calibration
+#VOD2011masked <- raster::mask(VOD2011masked,studycontshapes)
+#AvitabileCResamp  <- raster::mask(AvitabileCResamp,studycontshapes)
+
 
 df <- data.frame(x = getValues(VOD2011masked), y = getValues(AvitabileCResamp),
                  d = densCols(getValues(VOD2011masked), getValues(AvitabileCResamp),nbin=200, colramp = colorRampPalette(rev(c('yellow','orange','turquoise4','dodgerblue4')))))#colorRampPalette(rev(rainbow(10, end = 4/6)))))
-
+pearsonsr <- cor(df$x,df$y,'complete.obs')
 linmodzerointerc <- lm(y~0+x,df)
 p <- ggplot(df) +
   geom_point(aes(x, y,col=d),size=0.5) +

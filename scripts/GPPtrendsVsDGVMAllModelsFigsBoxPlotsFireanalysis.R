@@ -33,7 +33,7 @@ drylandclasssfc <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactex
 MODburnedarea <- raster("D:/Driving_C/BurnedArea/MCD64A1_2018daterange_burnsum_10km_ag.tif")
 #GPP stack PMLv2
 
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_v016.tif")
 
 years <- seq(2003,2018,1)
 
@@ -189,7 +189,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
   
   
   
-  df$bin <- cut(df$x, c(0.1, 0.2, 0.3, 0.4, 0.5, 1),include.lowest=T)
+  df$bin <- cut(df$x, c(0,0.1, 0.2, 0.3, 0.4, 0.5, 1),include.lowest=T)
   
   
   DGVMname <- 'TRENDY'

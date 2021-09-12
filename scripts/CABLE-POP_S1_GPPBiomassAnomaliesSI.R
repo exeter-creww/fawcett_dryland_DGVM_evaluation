@@ -38,6 +38,10 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
 
 
+#TRENDY mean data bricks
+
+TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to Mg C per ha
+
 #contnrlist <- c(1,6,3,4)#number in continent shapefiles
 
     
@@ -90,20 +94,32 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   modelcCwdbrick <-  t(raster::flip(brick(modelcCwd),1))
   
   
-  extent(modelgppbrick) <- c(-180, 180, -90, 90)
+  
+  extent(modelgppbrick) <- c(-180, 180, -86, 94) #erronously shifted latitudes
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
+  modelgppbrick <- crop(modelgppbrick,TRENDYcVegbrick[[1]])
+  modelgppbrick <- extend(modelgppbrick,TRENDYcVegbrick[[1]])
   
-  extent(modelcVegVODcompbrick) <- c(-180, 180, -90, 90)
+  extent(modelcVegVODcompbrick) <- c(-180, 180, -86, 94)
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
+  modelcVegVODcompbrick <- crop(modelcVegVODcompbrick,TRENDYcVegbrick[[1]])
+  modelcVegVODcompbrick <- extend(modelcVegVODcompbrick,TRENDYcVegbrick[[1]])
   
-  extent(modelcVegbrick) <- c(-180, 180, -90, 90)
+  extent(modelcVegbrick) <- c(-180, 180, -86, 94)
   projection(modelcVegbrick) <- CRS("+init=epsg:4326")
+  modelcVegbrick <- crop(modelcVegbrick,TRENDYcVegbrick[[1]])
+  modelcVegbrick <- extend(modelcVegbrick,TRENDYcVegbrick[[1]])
   
-  extent(modelcLitterbrick) <- c(-180, 180, -90, 90)
+  extent(modelcLitterbrick) <- c(-180, 180, -86, 94)
   projection(modelcLitterbrick) <- CRS("+init=epsg:4326")
+  modelcLitterbrick <- crop(modelcLitterbrick,TRENDYcVegbrick[[1]])
+  modelcLitterbrick <- extend(modelcLitterbrick,TRENDYcVegbrick[[1]])
   
-  extent(modelcCwdbrick) <- c(-180, 180, -90, 90)
+  extent(modelcCwdbrick) <- c(-180, 180, -86, 94)
   projection(modelcCwdbrick) <- CRS("+init=epsg:4326")
+  modelcCwdbrick <- crop(modelcCwdbrick,TRENDYcVegbrick[[1]])
+  modelcCwdbrick <- extend(modelcCwdbrick,TRENDYcVegbrick[[1]])
+  
  # extent(lcfraster) <- c(-180, 180, -90, 90)
  # projection(lcfraster) <- CRS("+init=epsg:4326")
   

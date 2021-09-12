@@ -56,6 +56,8 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   latDGVM <- ncvar_get(ncingpp, "latitude")
   nlatDGVM <- dim(latDGVM)
   
+  lonDGVMsoil <- ncvar_get(ncincSoil, "longitude")
+  
   #time <- ncvar_get(ncingpp,'time')
   
   modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(303*12)+1),count=c(nlonDGVM,nlatDGVM,192))
@@ -85,7 +87,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   extent(modelgppbrick) <- c(-179, 180, -90, 90)
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
   
-  #ISAM_S2 cVeg different from gpp and cSoil (???) needs to be shifted
+  #ISAM_S2 cVeg AND cSoil different from gpp needs to be shifted
   extent(modelcVegVODcompbrick) <- c(0, 360, -90, 90)
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
   modelcVegVODcompbrick <- rotate(modelcVegVODcompbrick)
@@ -94,14 +96,10 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   projection(modelcVegbrick) <- CRS("+init=epsg:4326")
   modelcVegbrick <- rotate(modelcVegbrick)
   
-  extent(modelcVegVODcompbrick) <- c(-179, 180, -90, 90)
-  projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
-  
-  extent(modelcVegbrick) <- c(-179, 180, -90, 90)
-  projection(modelcVegbrick) <- CRS("+init=epsg:4326")
-  
-  extent(modelcSoilbrick) <- c(-179, 180, -90, 90)
+  extent(modelcSoilbrick) <- c(0, 360, -90, 90)
   projection(modelcSoilbrick) <- CRS("+init=epsg:4326")
+  modelcSoilbrick <- rotate(modelcSoilbrick)
+  
   
  # extent(lcfraster) <- c(-180, 180, -90, 90)
  # projection(lcfraster) <- CRS("+init=epsg:4326")

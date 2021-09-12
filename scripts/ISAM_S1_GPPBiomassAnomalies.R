@@ -53,6 +53,9 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   lonDGVM <- ncvar_get(ncingpp, "longitude")
   nlonDGVM <- dim(lonDGVM)
   
+  lonDGVMcVeg <- ncvar_get(ncincVeg, "longitude")
+  
+  
   latDGVM <- ncvar_get(ncingpp, "latitude")
   nlatDGVM <- dim(latDGVM)
   
@@ -84,15 +87,6 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   
   extent(modelgppbrick) <- c(-179, 180, -90, 90)
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
-  
-  #ISAM_S1 cVeg different from gpp and cSoil (???) needs to be shifted
-  extent(modelcVegVODcompbrick) <- c(0, 360, -90, 90)
-  projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
-  modelcVegVODcompbrick <- rotate(modelcVegVODcompbrick)
-  
-  extent(modelcVegbrick) <- c(0, 360, -90, 90)
-  projection(modelcVegbrick) <- CRS("+init=epsg:4326")
-  modelcVegbrick <- rotate(modelcVegbrick)
   
   extent(modelcVegVODcompbrick) <- c(-179, 180, -90, 90)
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
