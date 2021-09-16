@@ -3,16 +3,16 @@
 [![DOI](https://zenodo.org/badge/333717763.svg)](https://zenodo.org/badge/latestdoi/333717763)
 
 
-
-# Fawcett and Cunliffe dryland DGVM evaluation
+# Code for 'Assessing the predictions of carbon dynamics in global drylands'
 
 This repository contains R code for processing, analysing and visualizing the 
 data presented in 'Assessing the predictions of carbon dynamics in global 
 drylands' by Dominic Fawcett, Andrew Cunliffe, Karen Anderson, Richard Brazier, 
 Tim Hill, Stephen Sitch, Mike O’Sullivan, Jean Pierre Wigneron, and Others.
 
-## The manuscript is In Preparation
+Contact: df332@exeter.ac.uk or a.cunliffe@exeter.ac.uk
 
+## The manuscript is In Preparation
 
 
 INCLUDE DATA REFERENCE
