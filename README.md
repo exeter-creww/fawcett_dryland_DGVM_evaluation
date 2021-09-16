@@ -1,3 +1,9 @@
+
+
+[![DOI](https://zenodo.org/badge/333717763.svg)](https://zenodo.org/badge/latestdoi/333717763)
+
+
+
 # fawcett_dryland_DGVM_evaluation
 
 This repository contains R code for processing, analysing and visualizing the 
