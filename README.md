@@ -4,7 +4,7 @@
 
 
 
-# fawcett_dryland_DGVM_evaluation
+# Fawcett and Cunliffe dryland DGVM evaluation
 
 This repository contains R code for processing, analysing and visualizing the 
 data presented in 'Assessing the predictions of carbon dynamics in global 
@@ -13,7 +13,6 @@ Tim Hill, Stephen Sitch, Mike O’Sullivan, Jean Pierre Wigneron, and Others.
 
 ## The manuscript is In Preparation
 
-## A static version of this repo WILL BE archived on Zenodo
 
 
 INCLUDE DATA REFERENCE
