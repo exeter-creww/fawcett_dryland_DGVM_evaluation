@@ -20,9 +20,9 @@ setwd('D:/Driving_C')
 #extended: considers all pixels touched by mask
 
 #read GPP model native resolutions, different exctration methods
-modelGPPregular<- data.frame(GPPregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))[2:13])
-modelGPPcontained<- data.frame(GPPcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_contained.csv"))[2:13])
-modelGPPextended<- data.frame(GPPextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018_extended.csv"))[2:13])
+modelGPPregular<- data.frame(GPPregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2001_2018.csv",check.names=FALSE))[2:13])
+modelGPPcontained<- data.frame(GPPcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2001_2018_contained.csv",check.names=FALSE))[2:13])
+modelGPPextended<- data.frame(GPPextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2001_2018_extended.csv",check.names=FALSE))[2:13])
 
 modelGPP <- data.frame(modelGPPcontained,modelGPPregular,modelGPPextended,modelnames=row.names(modelGPPregular))
 
@@ -41,10 +41,10 @@ labs(y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='method')+
 plot(p)
 
 
-#read cVeg model native resolutions, different exctration methods
-modelcVegregular<- data.frame(cVegregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018.csv"))[2:13])
-modelcVegcontained<- data.frame(cVegcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_contained.csv"))[2:13])
-modelcVegextended<- data.frame(cVegextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/cVeg_drylands_2011_2018_extended.csv"))[2:13])
+#read AGC model native resolutions, different exctration methods
+modelcVegregular<- data.frame(cVegregular=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/AGC_drylands_2011_2018.csv",check.names=FALSE))[2:13])
+modelcVegcontained<- data.frame(cVegcontained=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/AGC_drylands_2011_2018_contained.csv",check.names=FALSE))[2:13])
+modelcVegextended<- data.frame(cVegextended=colMeans(read.csv("./DGVM/DGVMdrylandTS/cVeg/AGC_drylands_2011_2018_extended.csv",check.names=FALSE))[2:13])
 
 modelcVeg <- data.frame(modelcVegcontained,modelcVegregular,modelcVegextended,modelnames=row.names(modelcVegregular))
 
@@ -63,7 +63,7 @@ p<-ggplot(data=melted,aes(x=variable, y=value))+#, aes(x=dose, y=len)) +
 plot(p)
 
 
-resvec <- c(1,2.8125,1.25,0.5,0.5,1,2,1.875,0.5,1.2,0.5,2)
+resvec <- c(1,2.8125,1.25,0.5,0.5,1,1.9,1.875,0.5,1.2,0.5,2)
 
 #plot(resvec,modelcVeg$cVegregular/modelcVeg$cVegextended,xlab='resolution',ylab='exact/extended')
 #plot(resvec,modelcVeg$cVegcontained/modelcVeg$cVegregular,xlab='spatial resolution [degrees]',ylab='contained vs exact ratio')
@@ -76,12 +76,12 @@ plot1 <- ggplot(modelcVegresimpactdf,aes(x=resvec, y=ratio)) +
   theme_bw() +
   theme_classic() +
   theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
-  labs(title='a) cVeg',x='spatial resolution [degrees]',y=bquote('contained to exact ratio'))+#,title=paste0('Carbon density: ',DGVMname)) +
+  labs(title='a) AGC',x='spatial resolution [degrees]',y=bquote('contained to exact ratio'))+#,title=paste0('Carbon density: ',DGVMname)) +
   ylim(c(0,1))+
   xlim(c(0,3))
 
 
-resvec <- c(1,2.8125,1.25,0.5,0.5,1,2,1.875,0.5,1.2,0.5,2)
+resvec <- c(1,2.8125,1.25,0.5,0.5,1,1.9,1.875,0.5,1.2,0.5,2)
 
 #plot(resvec,modelGPP$GPPregular/modelGPP$GPPextended,xlab='resolution',ylab='exact/extended')
 #plot(resvec,modelGPP$GPPcontained/modelGPP$GPPregular,xlab='resolution',ylab='contained/exact')

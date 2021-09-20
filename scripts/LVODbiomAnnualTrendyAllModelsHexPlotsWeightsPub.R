@@ -4,7 +4,6 @@
 #values, makes scatterplots and calculates statistics #using exactextract and 
 #weights for regressions and statistics to deal with partial pixel coverage
 #contains code to make spatial maps of AGC and GPP (see end)
-#NOTE: weighted CCC currently not implemented
 
 library(mblm)
 library(viridis)
@@ -39,15 +38,12 @@ contsfordisp <- aggregate(continentshapes,dissolve=T)
 contnrlist <- c(1,6,3,4)#number in continent shapefiles
 studycontshapes <- aggregate(continentshapes[contnrlist,],dissolve=T)
 
-#dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE)
+#dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE, converted to vector)
+
 drylandclassshp <- readOGR(dsn = getwd(), layer = "drylandsglobal")
 drylandclasssfc <- st_as_sfc(drylandclassshp) #spatialpolygonsdf to sfc for exactextractr
 
-#dryland classes according to EU JRC dryland definition, also Yao et al. 2020 (exported from GEE), for visualisation only
-drylandclass <- raster("./Plots/drylandclassclipfin.tif")
-
-drylandclassSub <- readOGR(dsn = getwd(), layer = "drylands4contsub")#raster("D:/Driving_C/Plots/drylandclassclipfin.tif")
-
+drylandclassSub <- readOGR(dsn = getwd(), layer = "drylands4contsub")
 drylandclassSubsf <- st_as_sfc(drylandclassSub)
 
 
@@ -62,10 +58,10 @@ VODstack <- VODannualstacktot[[2:9]]
 TRENDYmeanbrick <- brick('./DGVM/TRENDYAGC2011_2018v3.tif')
 
 #create longitude based mask and apply to filter out northernmost and southernmost regions
-longmask <- TRENDYmeanbrick[[1]]
-longmask[,] <- 1
-longmask[1:34,] <- NA
-longmask[146:180,] <- NA
+# longmask <- TRENDYmeanbrick[[1]]
+# longmask[,] <- 1
+# longmask[1:34,] <- NA
+# longmask[146:180,] <- NA
 
 #resample VOD to 1 deg
 
@@ -77,14 +73,12 @@ VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
 
 VODdatamaskdrylandssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
  
-
-#partition total veg. biomass into above and below ground using factor of 0.4 (Liu et al. 2015; Qi et al. 2019)
 #convert from kg/m2 to Mg/ha (*10)
 
 TRENDYCarbonfinbrick <- TRENDYmeanbrick*10
 
 #convert VOD to biomass
-VODCarbonfinbrick <- VODstack1deg*52.48#calibration to Globbiomass #37.52192  #calibration to Avitabile
+VODCarbonfinbrick <- VODstack1deg*52.48#calibration to Globbiomass 
 
 #calculate mean per pixel over all years
 VODCarbonfinmeans <- calc(VODCarbonfinbrick,mean,na.rm=T)
@@ -137,7 +131,7 @@ coeffmat <- matrix(NA,ncol=6,nrow=14)
 coeffmat[1,] <- c('model','pearsonsr','linCCC','slope','intercept','npix')
 rcount=2
 
-#iterate through models and compare to LVOD AGC
+#iterate through models and compare to LVOD AGC, make hexbin plots and extract stats
 
 for(j in 1:12){#add individual models
   
@@ -145,7 +139,7 @@ for(j in 1:12){#add individual models
   
   if(j %in% c(1,2,3,5)){ #if model AGC can be calculated, use this, otherwise use 0.4
     modelindex <- modelvec[j]
-    TRENDYmodelstack <- stack(paste0("D:/Driving_C/DGVM/TRENDYmodelscVeg/",modelnames[modelindex],"_AGC2011_2018_1deg.tif"))
+    TRENDYmodelstack <- stack(paste0("./DGVM/TRENDYmodelscVeg/AGC_2011_2018_1deggrids/",modelnames[modelindex],"_AGC2011_2018_1deg.tif"))
     TRENDYmodelCbrick <- TRENDYmodelstack#calc(TRENDYmodelstack,mean,na.rm=T)
     TRENDYmodelCbrick[TRENDYmodelCbrick<0] <- 0
   }else{
@@ -183,11 +177,7 @@ for(j in 1:12){#add individual models
   #make scatterplot
   meanscatterplotlist[[j]] <- ggplot(df,aes(x=x,y=y)) +
     geom_hex(bins = 30, show.legend=F)+
-    #geom_point(aes(x, y),size=0.5,alpha=0.1) +
-    #scale_color_identity() +
-    #scale_fill_continuous(type = "viridis") + 
-    #scale_fill_viridis(name = "count", trans = "log", 
-    #                    breaks = 10^(0:6),limits=c(1,2000))+
+
     theme_bw() +
     theme_classic() +
     theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
@@ -197,8 +187,7 @@ for(j in 1:12){#add individual models
     xlim(c(-10,180))
     titlenr <- titlenr+1
 
-    #plot(meanscatterplotlist[[j]])
-  #calculate statistics and add regression line to plot
+#calculate statistics and add regression line to plot
 
     #get value of highest bin for adjusting colour scale
 maxcountvec[j] <- max(ggplot_build(meanscatterplotlist[[j]])$data[[1]]$count)   
@@ -210,15 +199,6 @@ VODweights <- VODCarbonyearmeans$coverage_fraction
 
 
 demingreg <- deming(DGVMvals~VODvals,weights=VODweights)
-
-#create data frame that works with ccclonw (not currently operational, how to format with weights/subject/time?)
-
-# dummytime <- c(rep(1,length(VODvals)),rep(2,length(VODvals)))
-# dummyindex <- c(seq(1,length(VODvals),1),seq(1,length(VODvals),1))
-# dummymethod <- c(rep(1,length(VODvals)*2))
-# data4ccc <- c(DGVMvals,VODvals)
-# df4ccc <- data.frame(data4ccc,dummytime,dummyindex,dummymethod)
-# cccweighted <- ccclonw(dataset=df4ccc,ry='data4ccc',rind='dummyindex',rtime='dummytime',rmet='dummymethod',vecD=VODweights)
 
 
 #add diagonal and regression line
@@ -255,8 +235,6 @@ DGVMname <- 'TRENDY'
 meanscatterplotlist[[j+1]] <- ggplot(df,aes(x=x,y=y)) +
   geom_hex(bins = 30, show.legend=F)+
 
-  #geom_point(aes(x, y),size=0.5,alpha=0.1) +
-  #scale_color_identity() +
   theme_bw() +
   theme_classic() +
   theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
@@ -267,21 +245,13 @@ meanscatterplotlist[[j+1]] <- ggplot(df,aes(x=x,y=y)) +
 
 #get value of highest bin for adjusting colour scale
 maxcountvec[j+1] <- max(ggplot_build(meanscatterplotlist[[j+1]])$data[[1]]$count)   
+
 #calculate statistics and add regression line to plot
 
 VODvals <- VODCarbonyearmeans$value
 DGVMvals <- DGVMCarbonyearmeans$value
 
 demingreg <- deming(DGVMvals~VODvals,weights=VODweights)
-
-#create data frame that works with ccclonw (not currently operational, how to format with weights/subject/time?)
-
-# dummytime <- c(rep(1,length(VODvals)),rep(2,length(VODvals)))
-# dummyindex <- c(seq(1,length(VODvals),1),seq(1,length(VODvals),1))
-# dummymethod <- c(rep(1,length(VODvals)*2))
-# data4ccc <- c(DGVMvals,VODvals)
-# df4ccc <- data.frame(data4ccc,dummytime,dummyindex,dummymethod)
-# cccweighted <- ccclonw(dataset=df4ccc,ry='data4ccc',rind='dummyindex',rtime='dummytime',rmet='dummymethod',vecD=VODweights)
 
 pearsonsr <- wtd.cor(VODvals,DGVMvals,weight=VODweights)[1,1]#extract person's r from matrix
 
@@ -321,10 +291,8 @@ getMinMax <- function(inraster){
   return(colbarbounds)
 }
 
-diverge0 <- function(p, ramp) {
-  # p: a trellis object resulting from rasterVis::levelplot
-  # ramp: the name of an RColorBrewer palette (as character), a character 
-  #       vector of colour names to interpolate, or a colorRampPalette.
+diverge0 <- function(p, ramp) { #source: https://rdrr.io/github/stevenpawley/Diverge0/src/R/diverge0.R
+
   require(RColorBrewer)
   require(rasterVis)
   if(length(ramp)==1 && is.character(ramp) && ramp %in% 
@@ -344,17 +312,7 @@ diverge0 <- function(p, ramp) {
   p
 } 
 
-#use old dryland mask for these figures
-#resample dryland classes to 1 deg (modal aggregation then neares neighbour resampling)
-# drylandclassag <- aggregate(drylandclass,fact=10,fun=modal)
-# drylandclassresamp <- raster::resample(drylandclassag,TRENDYmeanbrick[[1]],method='ngb')
-# drylandclassresamp <- drylandclassresamp*longmask
-#  
-# drylandmask <- drylandclassresamp>0
-# drylandmask[drylandmask==0] <- NA
-# 
-# drylandregion <- drylandmask
-# drylandregion[drylandregion>0] <- 0
+
 
 my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")),panel.background=list(col="lightgrey"))
 
@@ -373,15 +331,14 @@ TRENDYCarbonfintrend <- calc(TRENDYCarbonfinbrick,fun1)
 
 
 VODtrenddisp <- raster::mask(raster::mask(VODCarbonfintrend,drylandclassshp),studycontshapes)
-#VODtrenddisp <- raster::mask(raster::mask(VODCarbonfintrend,VODdatamaskdrylands),studycontshapes)
 
-#VODtrenddisp[is.na(VODtrenddisp)] <- 0
 
 trendMinMax <- getMinMax(VODtrenddisp)
 
 VODbiomtrendplot <- diverge0(levelplot(VODtrenddisp,par.settings=my.settings,main="a) L-VOD",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
   layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(drylandsubshapes,col='darkgrey'))
 plot(VODbiomtrendplot)
+
 #TRENDY trends
 
 TRENDYtrenddisp <- raster::mask(raster::mask(TRENDYCarbonfintrend,drylandclassshp),studycontshapes)
@@ -397,9 +354,9 @@ plot(TRENDYbiomtrendplot)
 
 #GPP trends over time period
 
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_v016.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
-TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2001_2018v3.tif')*10#from kgC per m2 to MgC per ha
 
 GPPstackresamp <- raster::resample(GPPstack,TRENDYannualgpp[[1]])
 PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha
@@ -414,17 +371,14 @@ TRENDYGPPfintrend <- calc(TRENDYannualdrygpp,fun1)
 
 #PMLv2 trends
 
-#PMLtrenddisp <-raster::mask(PMLGPPfintrend,drylandmask)
-#VODtrenddisp[is.na(VODtrenddisp)] <- 0
 
 trendMinMax <- getMinMax(PMLGPPfintrend)
 
 PMLbiomtrendplot <- diverge0(levelplot(PMLGPPfintrend,par.settings=my.settings,main="a) MODIS PML-v2",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
   layer(sp.polygons(contsfordisp,col='grey'))
 plot(PMLbiomtrendplot)
-#TRENDY trends
 
-#TRENDYtrenddisp <- raster::mask(TRENDYGPPfintrend,drylandmask)
+#TRENDY trends
 
 trendMinMax <- getMinMax(TRENDYGPPfintrend)
 
@@ -440,21 +394,14 @@ plot(TRENDYbiomtrendplot)
 #continents for display (no antarctica)
 contsfordispGPP <- aggregate(continentshapes[-7,],dissolve=T)
 
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_v016.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
-TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2001_2018v3.tif')*10#from kgC per m2 to MgC per ha
 
 #mask to include any cells intersecting drylands mask
 
 # drylandclass_ras <- rasterize(drylandclass, PMLannualgpp[[1]], getCover=TRUE)
 # drylandclass_ras[drylandclass_ras==0] <- NA
-# 
- GPPstackresamp <- raster::resample(GPPstack,TRENDYannualgpp[[1]])
- PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha
-
-
-PMLannualdrygpp <- raster::mask(PMLannualgpp,drylandclassshp)#raster::mask(PMLannualgpp,drylandmask)
-TRENDYannualdrygpp <- raster::mask(TRENDYannualgpp,drylandclassshp)
 
 #means over time period
 PMLannualdrygppmean <- calc(PMLannualdrygpp,mean,na.rm=T)
@@ -465,16 +412,14 @@ fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t
 PMLannualdrygpptrend <- calc(PMLannualdrygpp,fun1)
 VODCarbonfintrend <- calc(VODCarbonfinbrick,fun1)
 
-
+#difference between trendy mean GPP and PMLv2 GPP
 PMLTRENDYDiff <- TRENDYannualdrygppmean-PMLannualdrygppmean
-
-
 
 trendMinMax <- getMinMax(PMLTRENDYDiff)
 
 my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")),panel.background=list(col="lightgrey"))
 
-
+#plot difference between PMLv2 GPP and TRENDY mean GPP
 differencePMLTRENDY <- diverge0(levelplot(PMLTRENDYDiff,par.settings=my.settings,main=bquote("b) Mean GPP difference: TRENDY - MODIS " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
 
 plot(differencePMLTRENDY)
@@ -496,52 +441,42 @@ differenceVODTRENDY <- diverge0(levelplot(raster::mask(VODTRENDYDiff,drylandmask
 
 plot(differenceVODTRENDY)
 
+#L-VOD biomass global plot
+
 VODbiomplot <- levelplot(raster::mask(VODCarbonfinmeans*drylandmask,studycontshapes),main=bquote("a) Mean AGC: L-VOD " ~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
                          par.settings=my.settings,at=seq(0, cellStats(raster::mask(VODCarbonfinmeans*drylandmask,studycontshapes),max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
                           latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+
                           latticeExtra::layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
 plot(VODbiomplot)
-# TRENDYbiomplot <- levelplot(TRENDYCarbonfinmeans,main=bquote("b) Mean Biomass (TRENDY-mean) "~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
-#                          par.settings=my.settings,at=seq(0, cellStats(TRENDYCarbonfinmeans,max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
-#                           layer(sp.polygons(contsfordisp,col='grey'))+
-#                           layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
-# JULESbiomplot <- levelplot(JULESCarbonfinmeans,main=bquote("e) Mean Biomass (JULES) "~ "["~ MgC ~ ha^{-1} ~ "]"),
-#                         par.settings=my.settings,at=seq(0, cellStats(JULESCarbonfinmeans,max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
-#                           layer(sp.polygons(contsfordisp,col='grey'))+
-#                           layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
+
+#PMLv2 GPP global plot
 PMLGPPplot <- levelplot(PMLannualdrygppmean,main=bquote("a) Mean GPP: MODIS PML-v2 " ~ "["~ Mg ~ C ~ ha^{-1} ~ yr^{-1}~"]"),
                         par.settings=my.settings,at=seq(0, cellStats(PMLannualdrygppmean,max), len = 100),margin=FALSE,col.regions=cols2,maxpixels = 2e10,add=T)+
                           latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+
                           latticeExtra::layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
-# TRENDYGPPplot <- levelplot(TRENDYannualdrygppmean,main=bquote("b) Mean GPP (TRENDY-mean) " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),
-#                            par.settings=my.settings,at=seq(0, cellStats(PMLannualdrygppmean,max), len = 100),margin=FALSE,col.regions=cols2,maxpixels = 2e10,add=T)+
-#                           layer(sp.polygons(contsfordisp,col='grey'))+
-#                           layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
-# JULESGPPplot <- levelplot(JULESannualdrygppmean,main=bquote("f) Mean GPP (JULES) " ~ "["~ MgC ~ ha^{-1} ~ y^{-1}~"]"),
-#                           par.settings=my.settings,at=seq(0, cellStats(JULESannualdrygppmean,max), len = 100),margin=FALSE,col.regions=cols2,maxpixels = 2e10,add=T)+
-#                           layer(sp.polygons(contsfordisp,col='grey'))+
-#                           layer(sp.polygons(studycontshapes,col='black',lwd=1.5)) 
+plot(PMLGPPplot)
 
-TRENDYmodelsmeanGPP <- brick('./DGVM/TRENDYpermodelGPP2003_2018v3.tif')*10#from kgC per m2 to MgC per ha
+
+TRENDYmodelsmeanGPP <- brick('./DGVM/TRENDYpermodelGPP2001_2018v3.tif')*10#from kgC per m2 to MgC per ha
 TRENDYmodelsmeancVeg <- brick('./DGVM/TRENDYpermodelAGC2011_2018v3.tif')*10
 
-TRENDYmodelstrendGPP <- brick('./DGVM/TRENDYpermodeltrendGPP2003_2018v3.tif')*10
+TRENDYmodelstrendGPP <- brick('./DGVM/TRENDYpermodeltrendGPP2001_2018v3.tif')*10
 TRENDYmodelstrendcVeg <- brick('./DGVM/TRENDYpermodeltrendAGC2011_2018v3.tif')*10
 
 #models vs obs differences means
-TRENDYmodelsmeanGPPdrylandsdiff <- raster::mask(TRENDYmodelsmeanGPP,drylandmask)-PMLannualdrygppmean 
+TRENDYmodelsmeanGPPdrylandsdiff <- raster::mask(TRENDYmodelsmeanGPP,drylandclassshp)-PMLannualdrygppmean 
 names(TRENDYmodelsmeanGPPdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
-TRENDYmodelsmeancVegdrylandsdiff <- raster::mask(TRENDYmodelsmeancVeg,drylandmask)-VODCarbonfinmeans 
+TRENDYmodelsmeancVegdrylandsdiff <- raster::mask(TRENDYmodelsmeancVeg,drylandclassshp)-VODCarbonfinmeans 
 names(TRENDYmodelsmeancVegdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
 
 #models vs obs differences trends
-TRENDYmodelstrendGPPdrylandsdiff <- raster::mask(TRENDYmodelstrendGPP,drylandmask)-PMLannualdrygpptrend
+TRENDYmodelstrendGPPdrylandsdiff <- raster::mask(TRENDYmodelstrendGPP,drylandclassshp)-PMLannualdrygpptrend
 names(TRENDYmodelstrendGPPdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
-TRENDYmodelstrendcVegdrylandsdiff <- raster::mask(TRENDYmodelstrendcVeg,drylandmask)-VODCarbonfintrend
+TRENDYmodelstrendcVegdrylandsdiff <- raster::mask(TRENDYmodelstrendcVeg,drylandclassshp)-VODCarbonfintrend
 names(TRENDYmodelstrendcVegdrylandsdiff) <- modelnames[c(-10,-11,-15,-16)]
 
 
-###GPP plots
+###GPP difference global plots for all models
 
 #mean
 GPPdiffmaxval <- cellStats(calc(TRENDYmodelsmeanGPPdrylandsdiff,max),max)
@@ -570,7 +505,7 @@ if(abs(GPPdiffmaxval)>abs(GPPdiffminval)){
 diverge0(levelplot(TRENDYmodelstrendGPPdrylandsdiff,par.settings=my.settings,main=bquote("Model - MODIS PML-v2 annual GPP trend " ~ "["~ Mg ~ C ~ ha^{-1} ~ yr^{-1}~"]"),at=seq(-GPPdiffextremeval, GPPdiffextremeval, len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
   latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
 
-###AGC plots
+###AGC difference global plots for all models
 
 #mean
 

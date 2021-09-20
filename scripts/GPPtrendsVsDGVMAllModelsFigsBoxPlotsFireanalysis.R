@@ -31,13 +31,14 @@ drylandclasssfc <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactex
 
 #MODburnedarea <- raster("D:/Driving_C/BurnedArea/MCD64A1_totaldaterange_burnsum_10km_ag.tif")
 MODburnedarea <- raster("D:/Driving_C/BurnedArea/MCD64A1_2018daterange_burnsum_10km_ag.tif")
+
 #GPP stack PMLv2
 
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_v016.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
-years <- seq(2003,2018,1)
+years <- seq(2001,2018,1)
 
-TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2001_2018v3.tif')*10 #from kgC per m2 to MgC per ha
 
 GPPstackresamp <- raster::resample(GPPstack,TRENDYannualgpp[[1]])
 PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha

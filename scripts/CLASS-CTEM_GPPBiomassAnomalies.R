@@ -18,7 +18,7 @@ NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenl
 contsfordisp <- aggregate(continentshapes,dissolve=T)
 
  
-yearlistGPP <- seq(2003,2018,1)
+yearlistGPP <- seq(2001,2018,1)
 yearlistC <- seq(2011,2018,1)
 yearlistmod <- seq(1901,2018,1)
 
@@ -69,8 +69,8 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
   
   #time <- ncvar_get(ncingpp,'time')
   
-  modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(303*12)+1),count=c(nlonDGVM,nlatDGVM,192))
-  modelgpptotTS <- ncvar_get(ncingpp,'gpp',start=c(1,1,(201*12)+1),count=c(nlonDGVM,nlatDGVM,1416))
+  modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(301*12)+1),count=c(nlonDGVM,nlatDGVM,216))
+  #modelgpptotTS <- ncvar_get(ncingpp,'gpp',start=c(1,1,(201*12)+1),count=c(nlonDGVM,nlatDGVM,1416))
   
   modelcVeg <- ncvar_get(ncincVeg,'cVeg')#,start=c(1,1,(102*12)+1),count=c(nlonDGVM,nlatDGVM,192))
   modelcVegVODcomp <- modelcVeg[,,312:319]
@@ -82,7 +82,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
   fillvalue <- ncatt_get(ncingpp,'gpp',"_FillValue")
   
   modelgpp[modelgpp==fillvalue$value] <- NA
-  modelgpptotTS[modelgpptotTS==fillvalue$value] <- NA
+ # modelgpptotTS[modelgpptotTS==fillvalue$value] <- NA
   modelcVegVODcomp[modelcVegVODcomp==fillvalue$value] <- NA
   modelcRootVODcomp[modelcRootVODcomp==fillvalue$value] <- NA
   
@@ -95,7 +95,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
   #lcfraster <- t(raster::flip(raster(landcoverfrac),1))
   
   modelgppbrick <- t(raster::flip(brick(modelgpp),1))#no flip  needed for DLEM
-  modelgpptotTSbrick <- t(raster::flip(brick(modelgpptotTS),1))#no flip  needed for DLEM
+  #modelgpptotTSbrick <- t(raster::flip(brick(modelgpptotTS),1))#no flip  needed for DLEM
   modelcRootVODcompbrick <-  t(raster::flip(brick(modelcRootVODcomp),1))
   
   modelcVegVODcompbrick <-  t(raster::flip(brick(modelcVegVODcomp),1))
@@ -106,8 +106,8 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
   extent(modelgppbrick) <- c(-180, 180, -90, 90)
   projection(modelgppbrick) <- CRS("+init=epsg:4326")
   
-  extent(modelgpptotTSbrick) <- c(-180, 180, -90, 90)
-  projection(modelgpptotTSbrick) <- CRS("+init=epsg:4326")
+  #extent(modelgpptotTSbrick) <- c(-180, 180, -90, 90)
+  #projection(modelgpptotTSbrick) <- CRS("+init=epsg:4326")
   
   extent(modelcVegVODcompbrick) <- c(-180, 180, -90, 90)
   projection(modelcVegVODcompbrick) <- CRS("+init=epsg:4326")
@@ -144,15 +144,15 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
  # nc_close(lcncin)
   
   
-  monthyearindex <- rep(1:16,each=12)
+  monthyearindex <- rep(1:18,each=12)
   
   modelannualgpp <- stackApply(modelgppbrick,monthyearindex,fun=mean)
   modelannualgpp <- modelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
   
-  monthyearindex <- rep(1:118,each=12)
-  
-  modelannualgpptotTS <- stackApply(modelgpptotTSbrick,monthyearindex,fun=mean)
-  modelannualgpptotTS <- modelannualgpptotTS*31556952 #from mean kg/m2/s to kg/m2/year
+  # monthyearindex <- rep(1:118,each=12)
+  # 
+  # modelannualgpptotTS <- stackApply(modelgpptotTSbrick,monthyearindex,fun=mean)
+  # modelannualgpptotTS <- modelannualgpptotTS*31556952 #from mean kg/m2/s to kg/m2/year
   
   modelannualcVegVODcomp <- modelcVegVODcompbrick*10
   modelannualcRootVODcomp <- modelcRootVODcompbrick*10
@@ -193,30 +193,30 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
    totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
    totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   totalglobalextract[,1:16] <- totalglobalextract[,1:16]*totalglobalextract$coverage_fraction
+   totalglobalextract[,1:18] <- totalglobalextract[,1:18]*totalglobalextract$coverage_fraction
    
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:18]
    
    
    totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2001_2018.csv",sep=",",row.names = F)
    
    #GPP calc cells touching
    
    totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
    
-   totalglobalextract[,1:16] <- totalglobalextract[,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+   totalglobalextract[,1:18] <- totalglobalextract[,1:18]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
    
-   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+   totalglobal <- colSums(totalglobalextract,na.rm=T)[1:18]
    
    totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2001_2018_extended.csv",sep=",",row.names = F)
    
    
    #GPP calc only cells contained
@@ -225,7 +225,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
    
    containedpixels <- totalglobalextract$coverage_fraction>=1 #only completely covered pixels
    
-   totalglobalextract <- totalglobalextract[containedpixels,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+   totalglobalextract <- totalglobalextract[containedpixels,1:18]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
    
    totalglobal <- colSums(totalglobalextract,na.rm=T)
    
@@ -233,7 +233,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
    
    dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
    
-   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
+   write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/CLASS-CTEM_dryland_GPP_2001_2018_contained.csv",sep=",",row.names = F)
    
    
    #cVeg VOD comp calc
@@ -283,7 +283,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
    
    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
    
-   totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
+   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg, from cVeg to AGC
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    
@@ -299,7 +299,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
    
    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
    
-   totalglobalPgC <- totalglobal/(10^9)*0.4 #from Mg to Pg, from cVeg to AGC
+   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg, from cVeg to AGC
    
    dfdrylandcVeg <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
    

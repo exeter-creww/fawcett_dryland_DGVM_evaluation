@@ -26,7 +26,7 @@ contnrlist <- c(1,6,3,4)#number in continent shapefiles
 NorthAmericaShape <- readOGR(dsn = getwd(), layer = "NorthAmericaNoGreenland")
 contsfordisp <- aggregate(continentshapes,dissolve=T)
 
-yearlistGPP <- seq(2003,2018,1)
+yearlistGPP <- seq(2001,2018,1)
 yearlistC <- seq(2011,2018,1)
 yearlistmod <- seq(1901,2018,1)
 
@@ -51,7 +51,7 @@ drylandclassSubsf <- st_as_sfc(drylandclassSub) #spatialpolygonsdf to sfc for ex
 VODannualstacktot <- stack("./LVOD_WGS84/composites/median/VOD_ASC_annual_median_filtv2.tif")
 
 #preprocessing of PMLv2 GPP in GEE
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_v016.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
 #2011 to 2018 (2010 does not have reliable values, extend to 2019 once TRENDY runs available)
 VODstack <- VODannualstacktot[[2:9]]
@@ -62,13 +62,10 @@ VODCarbonfinbrick <- VODstack*52.48 #calibration with Globbiomass #37.522 #facto
 
 GPPfinbrick <- GPPstack/100
 
-#TRENDY mean data bricks
-
-TRENDYcVegbrick <- brick('./DGVM/TRENDYAGC2011_2018v3.tif')*10 #kg C per m2 to Mg C per ha
-TRENDYGPPbrick <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #kg C per m2 to Mg C per ha
-
 ##############
 #GPP plots
+
+legendlabels <- c('TRENDY-mean', 'MODIS','CABLE-POP','CLASS-CTEM','CLM5.0','DLEM','ISAM','ISBA-CTRIP','JSBACH','JULES','LPJ-GUESS','OCN','ORCHIDEE','ORCHIDEE-CNP')
 
 #GPP dryland raster mask, to replace with exactextractr!
 
@@ -79,7 +76,7 @@ drylandmaskPML <- drylandclassPMLresamp>0
 drylandmaskPML[drylandmaskPML==0] <- NA
 
 
-modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
+modelmatrix =  matrix(NA, nrow = (2018-2001+1), ncol = 18)
 
 
   PMLdatamask <- !is.na(sum(GPPfinbrick)) #only use pixels with data valid GPP data for all years
@@ -96,34 +93,22 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
   totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
   
-  totalglobalextract[,1:16] <- totalglobalextract[,1:16]*totalglobalextract$coverage_fraction
+  totalglobalextract[,1:18] <- totalglobalextract[,1:18]*totalglobalextract$coverage_fraction
   
-  totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+  totalglobal <- colSums(totalglobalextract,na.rm=T)[1:18]
   
   
   totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
   drylandGPPPML <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
   
-  #TRENDY mean GPP
-  
-  arearaster <- raster::area(TRENDYGPPbrick[[1]])*100#*lcfraster
-  totalpercell <- arearaster*TRENDYGPPbrick 
-  
-  totalglobalextract <- extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)#replace with exactectractr as done for spatial
-  
-  totalglobalextract[,2:17] <- totalglobalextract[,2:17]*totalglobalextract$weight
-  
-  totalglobal <- colSums(totalglobalextract,na.rm=T)[2:17]
-  
-  totalglobalPgC <- (totalglobal/(10^9)) #from Mg to Pg, from cVeg to AGC
-  
-  TRENDYGPPTS <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
   
   #GPP extracted from native resolution models
   
-  GPPPMLcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2003_2018.csv"))
+  GPPPMLcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/GPP/GPP_drylands_2001_2018.csv"))
   
-  df <- cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
+  newTRENDYmean <- rowMeans(GPPPMLcompAllModels[,2:13])
+  
+  df <- cbind(TRENDY=newTRENDYmean,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
   
   melted <- melt(df,id.vars='year')
   
@@ -133,12 +118,12 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
   ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
   
-  #plot GPP time series 2003-2018 per model 
+  #plot GPP time series 2001-2018 per model 
   GPPplot <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
     geom_line(aes(colour=variable,lwd=variable,lty=variable))+
-    scale_colour_manual(values = colpalette)+
-    scale_size_manual(values = lwdtest)+
-    scale_linetype_manual(values=ltytest)+
+    scale_colour_manual(labels=legendlabels,values = colpalette)+
+    scale_size_manual(labels=legendlabels,values = lwdtest)+
+    scale_linetype_manual(labels=legendlabels,values=ltytest)+
     ylim(0, 35)+
     theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
@@ -147,12 +132,11 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   plot(GPPplot)
 
   
-  dfvar <- df#cbind(MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)
+  dfvar <- df
   
   #normalize to mean of time series
   dfvar[,-3] <-  dfvar[,-3]-as.list(colMeans(dfvar[,-3]))
-  #dfvar <- dfvar[,-1]
-  
+
 #GPP plot minus mean (variance), detrended
 
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
@@ -163,7 +147,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendpval <- apply(dfvar,2,fun2)
   
   #calculation of TS intercept varies, this method using medians is taken from https://pubs.usgs.gov/tm/2006/tm4a7/pdf/USGSTM4A7.pdf
-  TStrendintercept <- apply(dfvar,2,median)-TStrendslope*median(seq(1:16))
+  TStrendintercept <- apply(dfvar,2,median)-TStrendslope*median(seq(1:18))
   
   sigtrendsmask <- TStrendpval<0.05
   sigtrendsmask[] <- T #decided to detrend all instead
@@ -171,7 +155,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #detrend all time series (previously: with significant trends)
   dfvardetrend <- dfvar
-  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  dfvardetrend[,sigtrendsmask] <- dfvardetrend[,sigtrendsmask]-t(t(matrix(seq(1:18), nrow=18, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   melted <- melt(dfvardetrend,id.vars='year')
   
@@ -199,15 +183,12 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #GPP ribbon plot variant
   
-  # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
   
-  
-  dfribbon <-  cbind(TRENDY=TRENDYGPPTS$GPP,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)#cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  dfribbon <-  cbind(TRENDY=newTRENDYmean,MODIS=drylandGPPPML$GPP,GPPPMLcompAllModels)#cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   #normalize to mean of time series
   dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
-  #dfvar <- dfvar[,-1]
-  
+
   #GPP plot minus mean (variance), detrended
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
@@ -218,7 +199,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendpval <- apply(dfribbon,2,fun2)
   
   #calculation of TS intercept varies, this method using medians is taken from https://pubs.usgs.gov/tm/2006/tm4a7/pdf/USGSTM4A7.pdf
-  TStrendintercept <- apply(dfribbon,2,median)-TStrendslope*median(seq(1:16))
+  TStrendintercept <- apply(dfribbon,2,median)-TStrendslope*median(seq(1:18))
   
   sigtrendsmask <- TStrendpval<0.05
   sigtrendsmask[] <- T #decided to detrend all instead
@@ -228,7 +209,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   #detrend time series (previously: only with significant trends)
   dfribbondetrend <- dfribbon
-  dfribbondetrend[,sigtrendsmask] <- dfribbondetrend[,sigtrendsmask]-t(t(matrix(seq(1:16), nrow=16, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
+  dfribbondetrend[,sigtrendsmask] <- dfribbondetrend[,sigtrendsmask]-t(t(matrix(seq(1:18), nrow=18, ncol=15, byrow=F)[,sigtrendsmask])*TStrendslope[sigtrendsmask]+TStrendintercept[sigtrendsmask])
   
   
   #interquartile range
@@ -273,15 +254,13 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   modelBiasGPP <- colMeans(dfstats[1:13]-drylandGPPPML$GPP)
   
-  #old sensitivity/variance calculation
-  #modelVarianceGPP <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandGPPPML$GPP-mean(drylandGPPPML$GPP))))
-  
+
   #mean of MAE between model and 
   modelVarianceGPP <- colMeans(abs(dfribbondetrend[,c(-2,-3)]-dfribbondetrend$MODIS)) 
   
   GPPtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasGPP,variance=modelVarianceGPP,modelmeans=colMeans(dfstats[1:13]),PMLmean=mean(drylandGPPPML$GPP))
    
-  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2003_2018_fin_fixed_PMLV2v016.csv",sep=',',row.names=F)
+  write.table(GPPtempstatsresdf,"./stats/TRENDYmodelsGPPstats_2001_2018_fin_fixed_PMLV2v016_truemean.csv",sep=',',row.names=F)
   
   #calculate sen's slope and pvalue for each series
   
@@ -296,7 +275,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendCIlow <- apply(df,2,fun3)
   TStrendCIhigh <- apply(df,2,fun4)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2003_2018_fin_PMLV2v016.csv",sep=',',row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsGPPtrends_2001_2018_fin_PMLV2v016_truemean.csv",sep=',',row.names=F)
   
    
   ##############
@@ -337,21 +316,6 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   #TRENDY mean AGC
 
   
-  arearaster <- raster::area(TRENDYcVegbrick[[1]])*100#*lcfraster
-  totalpercell <- arearaster*TRENDYcVegbrick#*0.4
-  
-  
-  totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,VODdatamaskdrylandssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
-  totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
-  
-  totalglobalextract[,1:8] <- totalglobalextract[,1:8]*totalglobalextract$coverage_fraction
-  
-  totalglobal <- colSums(totalglobalextract,na.rm=T)[1:8]
-  
-  totalglobalPgC <- (totalglobal/(10^9))#*0.4 #from Mg to Pg, from cVeg to AGC
-  
-  TRENDYcVegTS <- data.frame(year=yearlistC,cVeg=totalglobalPgC)
-  
   
   colpalette <- hue_pal()(12)
   colpalette <- c("#909090","#000000",colpalette)
@@ -359,20 +323,21 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   lwdtest <- c(2,2,1,1,1,1,1,1,1,1,1,1,1,1)
   ltytest <- c(1,1,1,2,1,2,1,2,1,2,1,2,1,2)
   
+  legendlabels <- c('TRENDY-mean', 'L-VOD','CABLE-POP','CLASS-CTEM','CLM5.0','DLEM','ISAM','ISBA-CTRIP','JSBACH','JULES','LPJ-GUESS','OCN','ORCHIDEE','ORCHIDEE-CNP')
   
   cVegVODcompAllModels <- data.frame(read.csv("./DGVM/DGVMdrylandTS/cVeg/AGC_drylands_2011_2018.csv"))
   
+  newTRENDYmean <- rowMeans(cVegVODcompAllModels[,2:13])
   
-  df <- cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
-  
+  df <- cbind(TRENDY=newTRENDYmean,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   melted <- melt(df,id.vars='year')
   
   Cplot <- ggplot(data=melted,aes(x=year,y=value,group=variable)) +
     geom_line(aes(colour=variable,lwd=variable,lty=variable))+
-    scale_colour_manual(values = colpalette)+
-    scale_size_manual(values = lwdtest)+
-    scale_linetype_manual(values = ltytest)+
+    scale_colour_manual(labels=legendlabels,values = colpalette)+
+    scale_size_manual(labels=legendlabels,values = lwdtest)+
+    scale_linetype_manual(labels=legendlabels,values = ltytest)+
     theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
     labs(title='a)',y=bquote("AGC " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]')+
@@ -383,7 +348,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   plot(Cplot)
   
 
-  dfvar <-  df#cbind(LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  dfvar <-  df
   
   #normalize to mean of time series
   dfvar[,-3] <-  dfvar[,-3]-as.list(colMeans(dfvar[,-3]))
@@ -441,16 +406,14 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   
   #ribbon plot variant
-  
+   
   dfribbon <- df
- # dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
   
   
-  dfribbon <-  cbind(TRENDY=TRENDYcVegTS$cVeg,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
+  dfribbon <-  cbind(TRENDY=newTRENDYmean,LVOD=drylandcVegVOD$LVOD,cVegVODcompAllModels)
   
   #normalize to mean of time series
   dfribbon[,-3] <-  dfribbon[,-3]-as.list(colMeans(dfribbon[,-3]))
-  #dfvar <- dfvar[,-1]
   
   #GPP plot minus mean (variance), detrended
   
@@ -516,15 +479,13 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   modelBiasAGC <- colMeans(dfstats[1:13]- drylandcVegVOD$LVOD)
   
-  #old variance/sensitivity calculation
-  #modelVarianceAGC <- colMeans(abs(t(apply(dfstats[1:13],1,'-',colMeans(dfstats[1:13])))-(drylandcVegVOD$LVOD-mean(drylandcVegVOD$LVOD))))
-  
+
   #sensitivity calculation using detrended time series
   modelVarianceAGC <- colMeans(abs(dfribbondetrend[,c(-2,-3)]-dfribbondetrend$LVOD)) 
   
   AGCtempstatsresdf <- data.frame(model=names(dfstats[1:13]),bias=modelBiasAGC,variance=modelVarianceAGC,modelmeans=colMeans(dfstats[1:13]),LVODmean=mean(drylandcVegVOD$LVOD))
   
-  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelsAGCstats_2011_2018_fin_meancorr.csv",sep=',',row.names=F)
+  write.table(AGCtempstatsresdf,"./stats/TRENDYmodelsAGCstats_2011_2018_fin_truemean_test.csv",sep=',',row.names=F)
   
   fun1=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$estimates) }}
   fun2=function(t) { if (!is.finite(sum(t))){ return(NA) } else { m = sens.slope(t); return(m$p.value) }}
@@ -537,7 +498,7 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   TStrendCIlow <- apply(df,2,fun3)
   TStrendCIhigh <- apply(df,2,fun4)
   
-  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018_fin_meancorr.csv",sep=',',row.names=F)
+  write.table(data.frame(modelname=names(df),slope=TStrendslope,CIlow=TStrendCIlow,CIhigh=TStrendCIhigh,pval=TStrendpval),"./stats/TRENDYmodelsAGCtrends_2011_2018_fin_truemean.csv",sep=',',row.names=F)
   
   #############
   #model time series of cVeg and cSoil since 1901
@@ -550,39 +511,34 @@ modelmatrix =  matrix(NA, nrow = (2018-2003+1), ncol = 16)
   
   
   cVegAllModelsMean <- apply(cVegAllModels[,2:13],1,mean,na.rm=T)
-  cVegAllModels_Quartlower<- apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.025,na.rm=T)})
-  cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:13],1,FUN=function(x){quantile(x,0.975,na.rm=T)}) 
-  
-  cVegAllModelsribbonplotdf <- data.frame(year=cVegAllModels$year,TRENDYmean=cVegAllModelsMean,TRENDY_Quartlower=cVegAllModels_Quartlower,TRENDY_Quartupper=cVegAllModels_Quartupper)
-  
-  cVegAllModelsinclmean <- data.frame(mean=cVegAllModelsMean,cVegAllModels) 
+
+  cVegAllModelsinclmean <- data.frame(mean=cVegAllModelsMean,cVegAllModels[,(-7)]) 
   
   melted <- melt(cVegAllModelsinclmean,id.vars='year')
   
+   
+  legendlabels <- c('TRENDY-mean', 'CABLE-POP','CLASS-CTEM','CLM5.0','DLEM','ISAM','JSBACH','JULES','LPJ-GUESS','OCN','ORCHIDEE','ORCHIDEE-CNP')
+  
+  
   colpalette <- hue_pal()(12)
-  colpalette <- c("#464646",colpalette)
+  colpalette <- c("#464646",colpalette[c(-6)])#remove colour for ISBA-CTRIP
   
-  ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
+  ltytest <- c(1,1,2,1,2,1,1,2,1,2,1,2)
   
-  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
+  lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1)
 
   
 p1 <- ggplot(data=melted) + 
-  #geom_line(data=data.frame(year=cVegAllModels$year, y = cVegAllModelsribbonplotdf$TRENDYmean),aes(x=year,y=y),col='black',lwd=2) +
-  #geom_ribbon(data=data.frame(year=cVegAllModelsinclmean$year,ymin =cVegAllModelsribbonplotdf$TRENDY_Quartlower,
-   #               ymax = cVegAllModelsribbonplotdf$TRENDY_Quartupper),aes(x=year,ymin=ymin,ymax=ymax), alpha = 0.5,fill='darkgrey')+
-  
+
    geom_line(aes(x=year,y=value,group=variable,colour=variable,lwd=variable,lty=variable))+
-   scale_colour_manual(values = colpalette)+
-   scale_size_manual(values = lwdtest)+
-   scale_linetype_manual(values = ltytest)+
+   scale_colour_manual(labels=legendlabels,values = colpalette)+
+   scale_size_manual(labels=legendlabels,values = lwdtest)+
+   scale_linetype_manual(labels=legendlabels,values = ltytest)+
    ylim(c(-25,25))+
-    #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
-    #geom_line(aes(x = years,y=JULES),colour="orange")+
     theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
    geom_hline(aes(yintercept=0),lty=2)+
-    #plot.margin=margin(1,1,1,1,'cm')
+   
     labs(y=bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='a)')
   
 plot(p1)  
@@ -604,44 +560,33 @@ cSoilAllModels[,2:13] <- cSoilAllModels[,2:13]+cLitterAllModels[,2:13]+cCwdAllMo
 
 cSoilAllModels[,2:13] <-  cSoilAllModels[,2:13]-as.list(cSoilAllModels[1,2:13])
 
-#cLitterAllModels[,2:13] <-  cLitterAllModels[,2:13]-as.list(cLitterAllModels[1,2:13])
-
 cSoilAllModelsMean <- apply(cSoilAllModels[,2:13],1,mean,na.rm=T)
-cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.025,na.rm=T)})
-cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:13],1,FUN=function(x){quantile(x,0.975,na.rm=T)}) 
 
-cSoilAllModelsribbonplotdf <- data.frame(year=cSoilAllModels$year,TRENDYmean=cSoilAllModelsMean,TRENDY_Quartlower=cSoilAllModels_Quartlower,TRENDY_Quartupper=cSoilAllModels_Quartupper)
-
-cSoilAllModelsinclmean <- data.frame(mean=cSoilAllModelsMean,cSoilAllModels) 
+cSoilAllModelsinclmean <- data.frame(mean=cSoilAllModelsMean,cSoilAllModels[,(-7)])#remove ISBA-CTRIP 
 
 
 #dfallyears <- cbind(dfallyears,TRENDY=TRENDYmean)
 melted <- melt(cSoilAllModelsinclmean,id.vars='year')
 
 colpalette <- hue_pal()(12)
-colpalette <- c("#464646",colpalette)
+colpalette <- c("#464646",colpalette[c(-6)])#remove colour for ISBA-CTRIP
 
-ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,1,2,1,2,1,1,2,1,2,1,2)
 
-lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1)
 
 
 
 p2 <- ggplot(data=melted) + 
- # geom_ribbon(data=data.frame(year=cSoilAllModelsinclmean$year,ymin =cSoilAllModelsribbonplotdf$TRENDY_Quartlower,
-  #                            ymax = cSoilAllModelsribbonplotdf$TRENDY_Quartupper),aes(x=year,ymin=ymin,ymax=ymax), alpha = 0.5,fill='darkgrey')+
-  
+
   geom_line(aes(x=year,y=value,group=variable,colour=variable,lwd=variable,lty=variable))+
-  scale_colour_manual(values = colpalette)+
-  scale_size_manual(values = lwdtest)+
-  scale_linetype_manual(values = ltytest)+
+  scale_colour_manual(labels=legendlabels,values = colpalette)+
+  scale_size_manual(labels=legendlabels,values = lwdtest)+
+  scale_linetype_manual(labels=legendlabels,values = ltytest)+
   ylim(c(-25,25))+
-  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
-  #geom_line(aes(x = years,y=JULES),colour="orange")+
   theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
   geom_hline(aes(yintercept=0),lty=2)+
-  #plot.margin=margin(1,1,1,1,'cm')
   labs(y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='b)')
 
 plot(p2)  
@@ -670,117 +615,108 @@ cTotalAllModels[,1] <- cSoilAllModels[,1]
 
 
 cTotalAllModelsMean <- apply(cTotalAllModels[,2:13],1,mean,na.rm=T)
-cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.025)})
-cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:13],1,FUN=function(x){quantile(x,0.975)}) 
 
-cTotalAllModelsribbonplotdf <- data.frame(year=cTotalAllModels$year,TRENDYmean=cTotalAllModelsMean,TRENDY_Quartlower=cTotalAllModels_Quartlower,TRENDY_Quartupper=cTotalAllModels_Quartupper)
-
-cTotalAllModelsinclmean <- data.frame(mean=cTotalAllModelsMean,cTotalAllModels) 
+cTotalAllModelsinclmean <- data.frame(mean=cTotalAllModelsMean,cTotalAllModels[,(-7)]) 
 
 
 #dfallyears <- cbind(dfallyears,TRENDY=TRENDYmean)
 melted <- melt(cTotalAllModelsinclmean,id.vars='year')
 
 colpalette <- hue_pal()(12)
-colpalette <- c('#464646',colpalette,"#909090")
+colpalette <- c("#464646",colpalette[c(-6)])#remove colour for ISBA-CTRIP
 
-ltytest <- c(1,1,2,1,2,1,2,1,2,1,2,1,2)
+ltytest <- c(1,1,2,1,2,1,1,2,1,2,1,2)
 
-lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1,1)
+lwdtest <- c(2,1,1,1,1,1,1,1,1,1,1,1)
 #dfallyears[,12] <- NA
 
 
 p3 <- ggplot(data=melted) + 
-  #geom_ribbon(data=data.frame(year=cTotalAllModelsinclmean$year,ymin =cTotalAllModelsribbonplotdf$TRENDY_Quartlower,
-   #                           ymax = cTotalAllModelsribbonplotdf$TRENDY_Quartupper),aes(x=year,ymin=ymin,ymax=ymax), alpha = 0.5,fill='darkgrey')+
   
   geom_line(aes(x=year,y=value,group=variable,colour=variable,lwd=variable,lty=variable))+
-  scale_colour_manual(values = colpalette)+
-  scale_size_manual(values = lwdtest)+
-  scale_linetype_manual(values = ltytest)+
+  scale_colour_manual(labels=legendlabels,values = colpalette)+
+  scale_size_manual(labels=legendlabels,values = lwdtest)+
+  scale_linetype_manual(labels=legendlabels,values = ltytest)+
   ylim(c(-25,25))+
-  #geom_line(aes(x = years,y=TRENDY),colour="red",lwd=2)+
-  #geom_line(aes(x = years,y=JULES),colour="orange")+
-  theme(legend.position='none',panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
   geom_hline(aes(yintercept=0),lty=2)+
-  #plot.margin=margin(1,1,1,1,'cm')
   labs(y=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),x='Time [yr]',title='c)')
 
 plot(p3) 
 
-
+#legend.position='none',
 
 grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
 
 #ribbon plots of cVeg, cSoil and total since 1901
 
 #95% CI range
-
-
-cSoilAllModels[,2:12] <-  cSoilAllModels[,2:12]-as.list(cSoilAllModels[1,2:12])
-cVegAllModels[,2:12] <-  cVegAllModels[,2:12]-as.list(cVegAllModels[1,2:12])
-
-cTotalAllModelsMean <- apply(cTotalAllModels[,2:12],1,mean,na.rm=T)
-cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
-cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
-
-cSoilAllModelsMean <- apply(cSoilAllModels[,2:12],1,mean,na.rm=T)
-cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
-cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
-
-cVegAllModelsMean <- apply(cVegAllModels[,2:12],1,mean,na.rm=T)
-cVegAllModels_Quartlower<- apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
-cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
-
-cVegAllModelsribbonplotdf <- data.frame(years=cVegAllModels$year,TRENDYmean=cVegAllModelsMean,TRENDY_Quartlower=cVegAllModels_Quartlower,TRENDY_Quartupper=cVegAllModels_Quartupper)
-
-p1 <- ggplot(cVegAllModelsribbonplotdf, aes(x = years)) + 
-  theme_classic() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-25,25))+
-  xlab('Time [yr]') +
-  ylab(bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]")) +
-  labs(title=bquote('d)'))+
-  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
-  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
-  geom_ribbon(aes(ymin =TRENDY_Quartlower,
-                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
-
-
-cSoilAllModelsribbonplotdf <- data.frame(years=cSoilAllModels$year,TRENDYmean=cSoilAllModelsMean,TRENDY_Quartlower=cSoilAllModels_Quartlower,TRENDY_Quartupper=cSoilAllModels_Quartupper)
-
-p2 <- ggplot(cSoilAllModelsribbonplotdf, aes(x = years)) + 
-  theme_classic() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-25,25))+
-  xlab('Time [yr]') +
-  ylab(bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]")) +
-  labs(title=bquote('e)'))+
-  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
-  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
-  geom_ribbon(aes(ymin =TRENDY_Quartlower,
-                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
-
-
-cTotalAllModelsribbonplotdf <- data.frame(years=cTotalAllModels$year,TRENDYmean=cTotalAllModelsMean,TRENDY_Quartlower=cTotalAllModels_Quartlower,TRENDY_Quartupper=cTotalAllModels_Quartupper)
-p3 <- ggplot(cTotalAllModelsribbonplotdf, aes(x = years)) + 
-  theme_classic() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-  ylim(c(-25,25))+
-  xlab('Time [yr]') +
-  ylab(bquote(Delta ~" cTotal " ~ "["~ Pg ~ C ~ "]")) +
-  labs(title=bquote('f)'))+
-  geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
-  geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
-  geom_ribbon(aes(ymin =TRENDY_Quartlower,
-                  ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
-
-
-grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
+# 
+# 
+# cSoilAllModels[,2:12] <-  cSoilAllModels[,2:12]-as.list(cSoilAllModels[1,2:12])
+# cVegAllModels[,2:12] <-  cVegAllModels[,2:12]-as.list(cVegAllModels[1,2:12])
+# 
+# cTotalAllModelsMean <- apply(cTotalAllModels[,2:12],1,mean,na.rm=T)
+# cTotalAllModels_Quartlower<- apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
+# cTotalAllModels_Quartupper <-  apply(cTotalAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
+# 
+# cSoilAllModelsMean <- apply(cSoilAllModels[,2:12],1,mean,na.rm=T)
+# cSoilAllModels_Quartlower<- apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
+# cSoilAllModels_Quartupper <-  apply(cSoilAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
+# 
+# cVegAllModelsMean <- apply(cVegAllModels[,2:12],1,mean,na.rm=T)
+# cVegAllModels_Quartlower<- apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.025)})
+# cVegAllModels_Quartupper <-  apply(cVegAllModels[,2:12],1,FUN=function(x){quantile(x,0.975)}) 
+# 
+# cVegAllModelsribbonplotdf <- data.frame(years=cVegAllModels$year,TRENDYmean=cVegAllModelsMean,TRENDY_Quartlower=cVegAllModels_Quartlower,TRENDY_Quartupper=cVegAllModels_Quartupper)
+# 
+# p1 <- ggplot(cVegAllModelsribbonplotdf, aes(x = years)) + 
+#   theme_classic() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+#   ylim(c(-25,25))+
+#   xlab('Time [yr]') +
+#   ylab(bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]")) +
+#   labs(title=bquote('d)'))+
+#   geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+#   geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+#   geom_ribbon(aes(ymin =TRENDY_Quartlower,
+#                   ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+# 
+# 
+# cSoilAllModelsribbonplotdf <- data.frame(years=cSoilAllModels$year,TRENDYmean=cSoilAllModelsMean,TRENDY_Quartlower=cSoilAllModels_Quartlower,TRENDY_Quartupper=cSoilAllModels_Quartupper)
+# 
+# p2 <- ggplot(cSoilAllModelsribbonplotdf, aes(x = years)) + 
+#   theme_classic() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+#   ylim(c(-25,25))+
+#   xlab('Time [yr]') +
+#   ylab(bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]")) +
+#   labs(title=bquote('e)'))+
+#   geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+#   geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+#   geom_ribbon(aes(ymin =TRENDY_Quartlower,
+#                   ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+# 
+# 
+# cTotalAllModelsribbonplotdf <- data.frame(years=cTotalAllModels$year,TRENDYmean=cTotalAllModelsMean,TRENDY_Quartlower=cTotalAllModels_Quartlower,TRENDY_Quartupper=cTotalAllModels_Quartupper)
+# p3 <- ggplot(cTotalAllModelsribbonplotdf, aes(x = years)) + 
+#   theme_classic() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
+#   ylim(c(-25,25))+
+#   xlab('Time [yr]') +
+#   ylab(bquote(Delta ~" cTotal " ~ "["~ Pg ~ C ~ "]")) +
+#   labs(title=bquote('f)'))+
+#   geom_line(aes(y = TRENDYmean),col='black',lwd=1) +
+#   geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+#   geom_ribbon(aes(ymin =TRENDY_Quartlower,
+#                   ymax = TRENDY_Quartupper), alpha = 0.5,fill='darkgrey')
+# 
+# 
+# grid.arrange(p1,p2,p3,ncol=3)#,layout_matrix = c(1,1,2,3))
 
 
 #model comparison
@@ -798,7 +734,9 @@ deltaTotaldf <- cTotaldf[118,]-cTotaldf[1,]
 
 colPal <- colorRampPalette(c("red", "grey", "blue"))
 
-legend_entry <- paste("  ", seq(1,11,1), names(deltacVegdf))
+legendlabels <- c('CABLE-POP','CLASS-CTEM','CLM5.0','DLEM','ISAM','JSBACH','JULES','LPJ-GUESS','OCN','ORCHIDEE','ORCHIDEE-CNP')
+
+legend_entry <- paste("  ", seq(1,11,1), legendlabels)
 
 
 deltacdf <- data.frame(deltacVeg=unlist(deltacVegdf),deltacSoil=unlist(deltacSoildf),legend_entry,names=names(deltacVegdf),deltaTotaldf=unlist(deltaTotaldf),modelnr=seq(1,11,1))
@@ -816,34 +754,29 @@ p1 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
   xlim(c(-25,25))+
   ylim(c(-25,25))+
   scale_colour_gradient2(low='red',mid='grey',high='blue')+
-  #(colours = terrain.colors(10))+
   geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
   geom_text(aes(label=names, x=Inf, y=y_values_legend, hjust=0)) +
   coord_fixed()+
-  #geom_point(aes(colour=color))+
-  #scale_color_gradientn(colours = viridis(5))+
+
   labs(colour=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x=bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]"))
 
 plot(p1)
 
 # add numbered legend, final plot is WIP, currently created externally
 
+
 p2 <- ggplot(data=deltacdf,aes(x=deltacVeg,y=deltacSoil,label=modelnr))+
   geom_hline(aes(yintercept=0),lty=2,col='grey')+
   geom_vline(aes(xintercept=0),lty=2,col='grey')+
   geom_point(aes(colour = deltaTotaldf))+
   theme_bw()+
-  xlim(c(-20,20))+
-  ylim(c(-20,20))+
+  xlim(c(-25,25))+
+  ylim(c(-25,25))+
   scale_colour_gradient2(low='red',mid='grey',high='blue')+
-  #(colours = terrain.colors(10))+
   geom_text(aes(label=modelnr),hjust=0.5, vjust=-1,col='black',size=3)+
   geom_text(aes(label=legend_entry, x=Inf, y=y_values_legend, hjust=0)) +
   theme(legend.position='false',plot.margin = unit(c(1,15,1,1), "lines"))+
-  #geom_point(aes(colour=color))+
-  #scale_color_gradientn(colours = viridis(5))+
   labs(colour=bquote(Delta ~" cEco " ~ "["~ Pg ~ C ~ "]"),y=bquote(Delta ~" cSoil " ~ "["~ Pg ~ C ~ "]"),x=bquote(Delta ~" cVeg " ~ "["~ Pg ~ C ~ "]"))
-
 
 gt <- ggplot_gtable(ggplot_build(p2))
 gt$layout$clip[gt$layout$name == "panel"] <- "off"

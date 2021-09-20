@@ -25,14 +25,13 @@ nlatDGVM <- dim(latDGVM)
 
 #time <- ncvar_get(ncin,'time')
 
-trendygpp <- ncvar_get(ncin,'gpp',start=c(1,1,(102*12)+1,1),count=c(360,180,192,16))
+trendygpp <- ncvar_get(ncin,'gpp',start=c(1,1,(100*12)+1,1),count=c(360,180,216,16))
 
 fillvalue <- ncatt_get(ncin,'gpp',"_FillValue")
 
 trendygpp[trendygpp==fillvalue$value] <- NA
  
-#extract JULES carbon from 2011 to 2018 
-
+#iterate through models
 for(i in 1:16){
 TRENDYmodelstack <- trendygpp[,,,i]
 
@@ -44,11 +43,11 @@ TRENDYmodelbrick <- t(raster::flip(brick(TRENDYmodelmeanstack),1))
 extent(TRENDYmodelbrick) <- c(-180, 180, -90, 90)
 projection(TRENDYmodelbrick) <- CRS("+init=epsg:4326")
 
-monthyearindex <- rep(1:16,each=12)
+monthyearindex <- rep(1:18,each=12)
 
 TRENDYmodelannualgpp <- stackApply(TRENDYmodelbrick,monthyearindex,fun=mean)
 TRENDYmodelannualgpp <- TRENDYmodelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
-writeRaster(TRENDYmodelannualgpp,paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/',modelnames[i],'_GPP_2003_2018v2.tif'),overwrite=T)
+writeRaster(TRENDYmodelannualgpp,paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/',modelnames[i],'_GPP_2001_2018v2.tif'),overwrite=T)
 }
 nc_close(ncin)

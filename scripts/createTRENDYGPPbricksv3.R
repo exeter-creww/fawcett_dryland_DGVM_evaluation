@@ -8,6 +8,7 @@ library(rgdal)
 library(Kendall) 
 library(trend)
 library(ncdf4)
+library(raster)
 
 setwd('D:/Driving_C')
 
@@ -24,7 +25,7 @@ nlatDGVM <- dim(latDGVM)
 
 #time <- ncvar_get(ncin,'time')
 
-trendygpp <- ncvar_get(ncin,'gpp',start=c(1,1,(102*12)+1,1),count=c(360,180,192,16))
+trendygpp <- ncvar_get(ncin,'gpp',start=c(1,1,(100*12)+1,1),count=c(360,180,216,16))
 
 fillvalue <- ncatt_get(ncin,'gpp',"_FillValue")
 
@@ -49,13 +50,17 @@ projection(TRENDYmodelsmeanbrick) <- CRS("+init=epsg:4326")
 
 nc_close(ncin)
 
-monthyearindex <- rep(1:16, each=12)
+monthyearindex <- rep(1:18, each=12)
 
 TRENDYannualgpp <- stackApply(TRENDYbrick,monthyearindex,fun=mean)
 TRENDYannualgpp <- TRENDYannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
 TRENDYmodelsannualgpp <- TRENDYmodelsmeanbrick*31556952 
 
+
+writeRaster(TRENDYannualgpp,'./DGVM/TRENDYGPP_2001_2018v3.tif',overwrite=T)
+
+writeRaster(TRENDYmodelsannualgpp,'./DGVM/TRENDYpermodelGPP2001_2018v3.tif',overwrite=T)
 
 #get annual GPP trend per model
 
@@ -81,9 +86,5 @@ for(i in 1:12){
   
 }
 
-writeRaster(TRENDYannualgpp,'./DGVM/TRENDYGPP_2003_2018v3.tif',overwrite=T)
-
-writeRaster(TRENDYmodelsannualgpp,'./DGVM/TRENDYpermodelGPP2003_2018v3.tif',overwrite=T)
-
-writeRaster(TRENDYmodelstrendstack,'./DGVM/TRENDYpermodeltrendGPP2003_2018v3.tif',overwrite=T)
+writeRaster(TRENDYmodelstrendstack,'./DGVM/TRENDYpermodeltrendGPP2001_2018v3.tif',overwrite=T)
 

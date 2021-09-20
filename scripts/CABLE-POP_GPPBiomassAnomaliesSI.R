@@ -35,7 +35,7 @@ VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sf
 
 
 #preprocessing of PMLv2 GPP in GEE
-GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
 
 #TRENDY mean data bricks
@@ -88,7 +88,7 @@ TRENDYcVegbrick <- brick('./DGVM/TRENDYcVeg2011_2018v3.tif')*10 #kg C per m2 to 
   modelcCwd[modelcCwd==fillvalue$value] <- NA
   
   
-  modelgppbrick <- t(raster::flip(brick(modelgpp),1))#no flip  needed for DLEM
+  modelgppbrick <- t(raster::flip(brick(modelgpp),1))
   modelcVegVODcompbrick <-  t(raster::flip(brick(modelcVegVODcomp),1))
   modelcVegbrick <-  t(raster::flip(brick(modelcVeg),1))
   modelcLitterbrick <-  t(raster::flip(brick(modelcLitter),1))

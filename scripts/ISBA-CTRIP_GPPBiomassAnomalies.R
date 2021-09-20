@@ -18,7 +18,7 @@ continentshapes <- readOGR(dsn = 'D:/Driving_C', layer = "WorldContinents")
 NorthAmericaShape <- readOGR(dsn = 'D:/Driving_C', layer = "NorthAmericaNoGreenland")
 contsfordisp <- aggregate(continentshapes,dissolve=T)
  
-yearlistGPP <- seq(2003,2018,1)
+yearlistGPP <- seq(2001,2018,1)
 yearlistC <- seq(2011,2018,1)
 yearlistmod <- seq(1901,2018,1)
 
@@ -33,7 +33,7 @@ VODdatamaskdrylands <- readOGR(getwd(),'VODdatamaskdrylands')
 VODdatamaskdryalndssf <- st_as_sfc(VODdatamaskdrylands) #spatialpolygonsdf to sfc for exactextractr
 
 #preprocessing of PMLv2 GPP in GEE
-GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
     
   gppmodelpath <- 'ISBA-CTRIP_S3_gpp.nc'
   cVegmodelpath <- 'ISBA-CTRIP_S3_cVeg.nc'
@@ -59,7 +59,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   
   #time <- ncvar_get(ncingpp,'time')
   
-  modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(303*12)+1),count=c(nlonDGVM,nlatDGVM,192))
+  modelgpp <- ncvar_get(ncingpp,'gpp',start=c(1,1,(301*12)+1),count=c(nlonDGVM,nlatDGVM,216))
   modelcVeg <- ncvar_get(ncincVeg,'cVeg',start=c(1,1,(201*12)+1),count=c(nlonDGVM,nlatDGVM,1416))
   modelcVegVODcomp <- modelcVeg[,,((110*12)+1):length(modelcVeg[1,1,])]
   #modelcVeg <- modelcVeg[,,202:319]
@@ -105,7 +105,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
   nc_close(ncincSoil)
   
   
-  monthyearindexgpp <- rep(1:16,each=12)
+  monthyearindexgpp <- rep(1:18,each=12)
   monthyearindexcVegVODcomp <- rep(1:8,each=12)
   monthyearindexcVeg <- rep(1:118,each=12)
   monthyearindexcSoil <- rep(1:118,each=12)
@@ -138,30 +138,30 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
     totalglobalextractperpoly <- exactextractr::exact_extract(totalpercell,drylandclasssf,force_df=T)#extract(totalpercell,drylandclass,weights=T,normalizeWeights=F,df=T)
     totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
     
-    totalglobalextract[,1:16] <- totalglobalextract[,1:16]*totalglobalextract$coverage_fraction
+    totalglobalextract[,1:18] <- totalglobalextract[,1:18]*totalglobalextract$coverage_fraction
     
-    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:18]
     
     
     totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
     
     dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
     
-    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2003_2018.csv",sep=",",row.names = F)
+    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2001_2018.csv",sep=",",row.names = F)
     
     #GPP calc cells touching
     
     totalglobalextract <- do.call('rbind',totalglobalextractperpoly)
     
-    totalglobalextract[,1:16] <- totalglobalextract[,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+    totalglobalextract[,1:18] <- totalglobalextract[,1:18]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
     
-    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:16]
+    totalglobal <- colSums(totalglobalextract,na.rm=T)[1:18]
     
     totalglobalPgC <- totalglobal/(10^9) #from Mg to Pg
     
     dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
     
-    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2003_2018_extended.csv",sep=",",row.names = F)
+    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2001_2018_extended.csv",sep=",",row.names = F)
     
     
     #GPP calc only cells contained
@@ -170,7 +170,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
     
     containedpixels <- totalglobalextract$coverage_fraction>=1 #only completely covered pixels
     
-    totalglobalextract <- totalglobalextract[containedpixels,1:16]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
+    totalglobalextract <- totalglobalextract[containedpixels,1:18]#*totalglobalextract$coverage_fraction #no weighting for touching pixels
     
     totalglobal <- colSums(totalglobalextract,na.rm=T)
     
@@ -178,7 +178,7 @@ GPPstack <- stack("D:/Driving_C/PMLV2sampled/PMLv2GPPstack10knew.tif")
     
     dfdrylandGPP <- data.frame(year=yearlistGPP,GPP=totalglobalPgC)
     
-    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2003_2018_contained.csv",sep=",",row.names = F)
+    write.table(dfdrylandGPP,"D:/Driving_C/DGVM/DGVMdrylandTS/GPP/ISBA-CTRIP_dryland_GPP_2001_2018_contained.csv",sep=",",row.names = F)
     
     
     #cVeg VOD comp calc

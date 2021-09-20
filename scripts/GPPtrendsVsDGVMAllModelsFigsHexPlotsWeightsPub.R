@@ -13,7 +13,9 @@ library(ggplot2)
 library(gridExtra)
 library(ncdf4)
 library(deming)
+library(raster)
 library(weights)
+library(sf)
 
 setwd('D:/Driving_C')
 
@@ -27,11 +29,11 @@ drylandclass <- readOGR(dsn = getwd(), layer = "drylandsglobal")
 drylandclasssfc <- st_as_sfc(drylandclass) #spatialpolygonsdf to sfc for exactextractr
 #GPP stack PMLv2
 
-GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew.tif")
+GPPstack <- stack("./PMLV2sampled/PMLv2GPPstack10knew_2001_2018_v016.tif")
 
-years <- seq(2003,2018,1)
+years <- seq(2001,2018,1)
 
-TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2003_2018v3.tif')*10 #from kgC per m2 to MgC per ha
+TRENDYannualgpp <- brick('./DGVM/TRENDYGPP_2001_2018v3.tif')*10 #from kgC per m2 to MgC per ha
 
 GPPstackresamp <- raster::resample(GPPstack,TRENDYannualgpp[[1]])
 PMLannualgpp <- GPPstackresamp/100 #from gC per m2 to MgC per ha
@@ -72,10 +74,11 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
   
   modelnames <- ncatt_get(ncin,0,"models")
   modelnames <- unlist(strsplit(modelnames$value,' '))
+  maxcountvec <- rep(1,13)
   
   nc_close(ncin)
   
-  TRENDYmodelGPPnames <- list.files('./DGVM/TRENDYmodelsGPP')
+  TRENDYmodelGPPnames <- list.files('./DGVM/TRENDYmodelsGPP/GPP2001_2018_1deggrids/')
   
   #matrix of regression/correlation values (remove CCC)
   coeffmat <- matrix(NA,ncol=6,nrow=14)
@@ -91,7 +94,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
     
     modelindex <- modelvec[j]
     
-    TRENDYmodelGPPbrick <- brick(paste0('./DGVM/TRENDYmodelsGPP/',TRENDYmodelGPPnames[[ modelindex ]]))
+    TRENDYmodelGPPbrick <- brick(paste0('./DGVM/TRENDYmodelsGPP/GPP2001_2018_1deggrids/',TRENDYmodelGPPnames[[ modelindex ]]))
     TRENDYGPPfinbrick <- TRENDYmodelGPPbrick*10 # kg per m2 to Mg C per ha
     
     DGVMGPPyearmeansperpoly <- exactextractr::exact_extract(calc(TRENDYGPPfinbrick,mean,na.rm=T),drylandclasssfc,force_df=T)
@@ -103,22 +106,28 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
     
     DGVMname <- modelnames[modelindex]
     
-    meanscatterplotlist[[j]] <- ggplot(df) +
-      geom_point(aes(x, y),size=0.5,alpha=0.1) +
-      scale_color_identity() +
+    meanscatterplotlist[[j]] <- ggplot(df,aes(x=x,y=y)) +
+      geom_hex(bins = 30, show.legend=F)+
+      #geom_point(aes(x, y),size=0.5,alpha=0.1) +
+      #scale_color_identity() +
       theme_bw() +
       theme_classic() +
       theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
       labs(title=paste(titlelist[titlenr],DGVMname),x="MODIS GPP",y=bquote("modelled GPP"))+
       coord_fixed()+
-      ylim(c(0,40))+
-      xlim(c(0,40))
+      ylim(c(-2.5,45))+
+      xlim(c(-2.5,45))
     titlenr <- titlenr+1
 
     PMLvals <- PMLGPPyearmeans$value
     DGVMvals <- DGVMGPPyearmeans$value
     
+    #DGVMminusPML <- (DGVMvals*PMLweights)-(PMLvals*PMLweights)
+    #mean(DGVMminusPML,na.rm=T)
     
+    
+    #get value of highest bin for adjusting colour scale
+    maxcountvec[j] <- max(ggplot_build(meanscatterplotlist[[j]])$data[[1]]$count)  
     
     #calculate statistics and add regression line to plot
     
@@ -134,7 +143,7 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
     
     pearsonsr <- wtd.cor(PMLvals,DGVMvals,weight=PMLweights)[1,1]#extract person's r from matrix
     
-    coeffmat[rcount,1] <- modelnames[j]
+    coeffmat[rcount,1] <- modelnames[modelindex]
     coeffmat[rcount,2] <- pearsonsr
     coeffmat[rcount,3] <- NA#to be replaced with weighted CCC
     coeffmat[rcount,4] <- demingreg$coefficients[2]#slope
@@ -151,17 +160,21 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
   
   DGVMname <- 'TRENDY'
   
-  meanscatterplotlist[[j+1]] <- ggplot(df) +
-    geom_point(aes(x, y),size=0.5,alpha=0.1) +
-    scale_color_identity() +
-    theme_bw() +
+  meanscatterplotlist[[j+1]] <- ggplot(df,aes(x=x,y=y)) +
+    geom_hex(bins = 30, show.legend=F)+
+    #scale_fill_viridis(name = "count", trans = "log",breaks = 10^(0:6),limits=c(1,max(maxcountvec)))+
+    #geom_point(aes(x, y),size=0.5,alpha=0.1) +
+    #scale_color_identity() +
+    theme_bw() + 
     theme_classic() +
     theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
     labs(title=paste(titlelist[titlenr],DGVMname),x="MODIS GPP",y=bquote("modelled GPP"))+
     coord_fixed()+
-    ylim(c(0,40))+
-    xlim(c(0,40))
+    ylim(c(-2.5,45))+
+    xlim(c(-2.5,45))
 
+  #get value of highest bin for adjusting colour scale
+  maxcountvec[j+1] <- max(ggplot_build(meanscatterplotlist[[j+1]])$data[[1]]$count)   
   
   PMLvals <- carbonyearmeansdf$PML
   DGVMvals <- carbonyearmeansdf$DGVM
@@ -183,11 +196,17 @@ TRENDYGPPyearmeans <- do.call('rbind',TRENDYGPPyearmeansperpoly)
   coeffmat[rcount,6] <- sum(is.finite(PMLvals*DGVMvals))#number of pixels
   rcount <- rcount+1
  
+  
+  #for each plot, define colour scale using max count of all plots
+  for(n in 1:13){
+    meanscatterplotlist[[n]] <-  meanscatterplotlist[[n]]+scale_fill_viridis(name = "count", trans = "log",breaks = 10^(0:6),limits=c(1,max(maxcountvec)))
+  }
+  
   #arrange and plot all scatterplots
 grid.arrange(grobs=meanscatterplotlist,nrow=3,ncol=5)
 
 #save stats table
-write.csv(coeffmat,'./stats/DGVMvsMODIS_GPPTrendStatsWeightedV1.csv')
+write.csv(coeffmat,'./stats/DGVMvsMODIS_GPPTrendStatsWeightedV2_PMLV2_v016_2001_2018mean.csv')
 
 
 
