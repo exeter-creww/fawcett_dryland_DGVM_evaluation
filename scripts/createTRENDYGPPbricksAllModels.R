@@ -48,6 +48,6 @@ monthyearindex <- rep(1:18,each=12)
 TRENDYmodelannualgpp <- stackApply(TRENDYmodelbrick,monthyearindex,fun=mean)
 TRENDYmodelannualgpp <- TRENDYmodelannualgpp*31556952 #from mean kg/m2/s to kg/m2/year
 
-writeRaster(TRENDYmodelannualgpp,paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/',modelnames[i],'_GPP_2001_2018v2.tif'),overwrite=T)
+writeRaster(TRENDYmodelannualgpp,paste0('D:/Driving_C/DGVM/TRENDYmodelsGPP/GPP2001_2018_1deggrids/',modelnames[i],'_GPP_2001_2018v2.tif'),overwrite=T)
 }
 nc_close(ncin)

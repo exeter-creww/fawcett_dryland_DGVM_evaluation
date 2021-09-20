@@ -234,7 +234,6 @@ DGVMname <- 'TRENDY'
 
 meanscatterplotlist[[j+1]] <- ggplot(df,aes(x=x,y=y)) +
   geom_hex(bins = 30, show.legend=F)+
-
   theme_bw() +
   theme_classic() +
   theme(text = element_text(size=12),plot.title = element_text(face="bold",size=12))+
