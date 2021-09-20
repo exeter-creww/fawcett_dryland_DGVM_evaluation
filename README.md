@@ -6,9 +6,9 @@
 # Code for 'Assessing the predictions of carbon dynamics in global drylands'
 
 This repository contains R code for processing, analysing and visualizing the 
-data presented in 'Assessing the predictions of carbon dynamics in global 
+data presented in 'Assessing model predictions of carbon dynamics in global 
 drylands' by Dominic Fawcett, Andrew Cunliffe, Karen Anderson, Richard Brazier, 
-Tim Hill, Stephen Sitch, Mike O’Sullivan, Jean Pierre Wigneron, and Others.
+Tim Hill, Stephen Sitch, Mike O’Sullivan and Others.
 
 Contact: df332@exeter.ac.uk or a.cunliffe@exeter.ac.uk
 
@@ -17,9 +17,11 @@ Contact: df332@exeter.ac.uk or a.cunliffe@exeter.ac.uk
 
 INCLUDE DATA REFERENCE
 This code analyses the following datasets:
-1) VOD dataset supplied by Jean Pierre Wigneron (REFERENCE)
+1) VOD dataset supplied by Jean Pierre Wigneron (SMOS-IC V2)
 2) Output from the Trendy land surface model intercomparison (v8; https://sites.exeter.ac.uk/trendy/).
-3) Dryland classes imported from Google Earth Engine Repository: https://earthengine.googlesource.com/users/dfawcett/DRIVING_C/+/refs/heads/master
+3) PML-v2 MODIS based GPP data (Zhang et al. 2019 https://github.com/gee-hydro/gee_PML)
+
+Google Earth Engine Repository for exporting dryland classes, burned area and PML-v2 data: https://earthengine.googlesource.com/users/dfawcett/DRIVING_C_RS_publication)
 
 
 R scripts used for final result generation:
@@ -30,16 +32,22 @@ R scripts used for final result generation:
 
 **LVODprocessingAnnualStackFin.R:** Filters out unreliable pixels based on observation count and ASC-DESC differences, creates filtered annual stack
 
-**createTRENDYGPPbricksv3.R:** Extracts GPP data for 2003-2018 from netCDF and writes raster bricks with converted GPP values (kg/m2/y) for further analysis.
+**LVODprocessingAnnualStackFin_noDESCfilt.R:** Filters out unreliable pixels based on observation count, NO ASC-DESC data filtering, creates filtered annual stack
+
+**createTRENDYGPPbricksv3.R:** Extracts GPP data for 2001-2018 from netCDF and writes raster bricks with converted GPP values (kg/m2/y) for further analysis.
 
 **createTRENDYcVegbricksv3.R:** Extracts vegetation carbon data for 2011-2018 from netCDF and writes raster bricks with veg. carbon values (kg/m2, above and below ground!) for further analysis.
 
-**LVODbiomAnnualTrendyMeanFigsDensPlotsWeights.R:** Generate scatterplot and linear model figures for TRENDY models and LVOD biomass carbon comparison
+**LVODbiomAnnualTrendyAllModelsHexPlotsWeightsPub.R:** Generate hexbin scatterplot and linear model figures for TRENDY models and LVOD biomass carbon comparison, export spatial statistics and create spatial maps of AGC and GPP distributions and trends
 
-**GPPtrendsVsDGVMFigsDensPlotsWeights.R:** Generate scatterplot figures for TRENDY models and PMLv2 GPP comparison
+**GPPtrendsVsDGVMAllModelsFigsHexPlotsWeightsPub.R:** Generate hexbin scatterplot and linear model figures for TRENDY models and PML-v2 GPP comparison, export spatial statistics
 
-**[MODELNAME]_GPPBiomassAnomalies.R:** Extracts GPP and Biomass anomalies across time series (from 1901 and 2003/2011) from model at native resolution
+**LVODbiomAnnualTrendyAllModelsBoxplotsWeightsFireanalysis.R:** Generate boxplots of LVOD and TRENDY AGC difference per burned area bin 
 
-**GPPBiomassAnomaliesNativeFigs.R:** Generate plots of GPP and Biomass anomalies across time series (from 1901 and 2003/2011)
+**[MODELNAME]_GPPBiomassAnomalies.R:** Extracts GPP (2001-2018), aboveground carbon, vegetation carbon and soil carbon across (1901 and 2003/2011) time series from model at native resolution
+
+**[MODELNAME]_GPPBiomassAnomaliesSI.R:** Extracts GPP (1901-2018), litter and coarse woody debris (1901-2018) across time series from model at native resolution
+
+**GPPBiomassAnomaliesNativeFigsFinalPub.R:** Generate plots of GPP and Biomass anomalies across time series (from 1901 and 2001/2011), export statistics
 
 **GPPBiomassAnomaliesNativeFigsResolutionImpact.R:** Investigate differences between extraction methods (bar plots)
