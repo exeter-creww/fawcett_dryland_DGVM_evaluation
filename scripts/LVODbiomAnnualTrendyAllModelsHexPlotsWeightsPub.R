@@ -335,7 +335,7 @@ VODtrenddisp <- raster::mask(raster::mask(VODCarbonfintrend,drylandclassshp),stu
 trendMinMax <- getMinMax(VODtrenddisp)
 
 VODbiomtrendplot <- diverge0(levelplot(VODtrenddisp,par.settings=my.settings,main="a) L-VOD",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
-  layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(drylandsubshapes,col='darkgrey'))
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+latticeExtra::layer(sp.polygons(drylandsubshapes,col='darkgrey'))
 plot(VODbiomtrendplot)
 
 #TRENDY trends
@@ -345,7 +345,7 @@ TRENDYtrenddisp <- raster::mask(raster::mask(TRENDYCarbonfintrend,drylandclasssh
 trendMinMax <- getMinMax(TRENDYtrenddisp)
 
 TRENDYbiomtrendplot <- diverge0(levelplot(TRENDYtrenddisp,par.settings=my.settings,main="b) TRENDY-mean",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
-  layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(drylandsubshapes,col='darkgrey'))
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+latticeExtra::layer(sp.polygons(drylandsubshapes,col='darkgrey'))
 
 plot(TRENDYbiomtrendplot)
 
@@ -374,7 +374,7 @@ TRENDYGPPfintrend <- calc(TRENDYannualdrygpp,fun1)
 trendMinMax <- getMinMax(PMLGPPfintrend)
 
 PMLbiomtrendplot <- diverge0(levelplot(PMLGPPfintrend,par.settings=my.settings,main="a) MODIS PML-v2",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
-  layer(sp.polygons(contsfordisp,col='grey'))
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))
 plot(PMLbiomtrendplot)
 
 #TRENDY trends
@@ -382,7 +382,7 @@ plot(PMLbiomtrendplot)
 trendMinMax <- getMinMax(TRENDYGPPfintrend)
 
 TRENDYbiomtrendplot <- diverge0(levelplot(TRENDYGPPfintrend,par.settings=my.settings,main="b) TRENDY-mean",at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
-  layer(sp.polygons(contsfordisp,col='grey'))#+layer(sp.polygons(drylandsubshapes,col='darkgrey'))
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))#+layer(sp.polygons(drylandsubshapes,col='darkgrey'))
 
 plot(TRENDYbiomtrendplot)
 
@@ -419,7 +419,8 @@ trendMinMax <- getMinMax(PMLTRENDYDiff)
 my.settings <- list(par.main.text = list(font = 2, just = "left",  x = grid::unit(5, "mm")),panel.background=list(col="lightgrey"))
 
 #plot difference between PMLv2 GPP and TRENDY mean GPP
-differencePMLTRENDY <- diverge0(levelplot(PMLTRENDYDiff,par.settings=my.settings,main=bquote("b) Mean GPP difference: TRENDY - MODIS " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
+differencePMLTRENDY <- diverge0(levelplot(PMLTRENDYDiff,par.settings=my.settings,main=bquote("b) Mean GPP difference: TRENDY - MODIS " ~ "["~ Mg ~ C ~ ha^{-1} ~ y^{-1}~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+latticeExtra::layer(sp.polygons(contsfordispGPP,col='black',lwd=1.5))
 
 plot(differencePMLTRENDY)
 
@@ -434,16 +435,17 @@ VODTRENDYDiff <- TRENDYCarbonfinmeans-VODCarbonfinmeans
 
 drylandmask4conts <- raster::mask(drylandmask,studycontshapes)
 
-trendMinMax <- getMinMax(raster::mask(VODTRENDYDiff,drylandmask4conts))
+trendMinMax <- getMinMax(raster::mask(VODTRENDYDiff,drylandclassSub))
 
-differenceVODTRENDY <- diverge0(levelplot(raster::mask(VODTRENDYDiff,drylandmask4conts),par.settings=my.settings,main=bquote("b) Mean AGC difference: TRENDY - L-VOD " ~ "["~ Mg ~ C ~ ha^{-1} ~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+layer(sp.polygons(contsfordisp,col='grey'))+layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
+differenceVODTRENDY <- diverge0(levelplot(raster::mask(VODTRENDYDiff,drylandclassSub),par.settings=my.settings,main=bquote("b) Mean AGC difference: TRENDY - L-VOD " ~ "["~ Mg ~ C ~ ha^{-1} ~"]"),at=seq(trendMinMax[1], trendMinMax[2], len = 100),margin=FALSE,maxpixels = 2e10),colorRampPalette(c('red','white','blue')))+
+  latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+latticeExtra::layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
 
 plot(differenceVODTRENDY)
 
 #L-VOD biomass global plot
 
-VODbiomplot <- levelplot(raster::mask(VODCarbonfinmeans*drylandmask,studycontshapes),main=bquote("a) Mean AGC: L-VOD " ~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
-                         par.settings=my.settings,at=seq(0, cellStats(raster::mask(VODCarbonfinmeans*drylandmask,studycontshapes),max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
+VODbiomplot <- levelplot(raster::mask(VODCarbonfinmeans,drylandclassSub),main=bquote("a) Mean AGC: L-VOD " ~ "["~ Mg ~ C ~ ha^{-1} ~ "]"),
+                         par.settings=my.settings,at=seq(0, cellStats(raster::mask(VODCarbonfinmeans,drylandclassSub),max), len = 100),margin=FALSE,col.regions=cols,maxpixels = 2e10,add=T)+
                           latticeExtra::layer(sp.polygons(contsfordisp,col='grey'))+
                           latticeExtra::layer(sp.polygons(studycontshapes,col='black',lwd=1.5))
 plot(VODbiomplot)
