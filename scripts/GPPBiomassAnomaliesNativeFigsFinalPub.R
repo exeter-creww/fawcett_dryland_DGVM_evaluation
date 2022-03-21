@@ -127,10 +127,10 @@ modelmatrix =  matrix(NA, nrow = (2018-2001+1), ncol = 18)
     ylim(0, 35)+
     theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
           panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
-    labs(title='a)',y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')
+    labs(title='a)',y=bquote("GPP " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')+
+  scale_x_continuous(breaks=c(2001,2007, 2013, 2018))
   
   plot(GPPplot)
-
   
   dfvar <- df
   
@@ -175,7 +175,8 @@ modelmatrix =  matrix(NA, nrow = (2018-2001+1), ncol = 18)
   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),text = element_text(size=18),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(face="bold"))+
     labs(title='b)',y=bquote("norm. GPP IAV " ~ "["~ Pg ~ C ~ yr^{-1}~ "]"),x='Time [yr]')+
-    geom_hline(yintercept=0,linetype='dashed',alpha=0.5)
+    geom_hline(yintercept=0,linetype='dashed',alpha=0.5)+
+    scale_x_continuous(breaks=c(2001,2007, 2013, 2018))
   
   plot(GPPplotvariance)
   
