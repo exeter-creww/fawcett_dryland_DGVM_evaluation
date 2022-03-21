@@ -12,10 +12,6 @@ Tim Hill, Stephen Sitch, Mike O’Sullivan and Others.
 
 Contact: df332@exeter.ac.uk or a.cunliffe@exeter.ac.uk
 
-## The manuscript is In Preparation
-
-
-INCLUDE DATA REFERENCE
 This code analyses the following datasets:
 1) VOD dataset supplied by Jean Pierre Wigneron (SMOS-IC V2)
 2) Output from the Trendy land surface model intercomparison (v8; https://sites.exeter.ac.uk/trendy/).
